@@ -3,81 +3,90 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Digital Event Passport</title>
+  <title>Digital Event Passport Roadmap</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- HTML5 QR Code Scanner Library -->
   <script src="https://unpkg.com/html5-qrcode"></script>
+  <style>
+    /* Pulse animation for the active traveling avatar indicator */
+    @keyframes pulse-ring {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+      70% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+    .active-traveler {
+      animation: pulse-ring 2s infinite;
+    }
+  </style>
 </head>
-<body class="bg-gradient-to-br from-indigo-50 via-sky-50 to-emerald-50 min-h-screen p-4 flex flex-col items-center justify-center">
+<body class="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-slate-100 min-h-screen p-4 flex flex-col items-center justify-center">
 
   <!-- Main Passport Card -->
-  <div class="max-w-md w-full bg-white/90 backdrop-blur-md rounded-3xl shadow-2xl p-6 space-y-6 border border-white/60 relative overflow-hidden my-6">
+  <div class="max-w-md w-full bg-slate-800/90 backdrop-blur-xl rounded-3xl shadow-2xl p-6 space-y-6 border border-slate-700/60 relative overflow-hidden my-6">
     
-    <!-- Decorative Corner Accents -->
-    <div class="absolute -top-10 -right-10 w-28 h-28 bg-gradient-to-br from-blue-400 to-indigo-600 rounded-full blur-2xl opacity-20 pointer-events-none"></div>
-    <div class="absolute -bottom-10 -left-10 w-28 h-28 bg-gradient-to-tr from-emerald-400 to-teal-500 rounded-full blur-2xl opacity-20 pointer-events-none"></div>
-
-    <!-- Event Banner / Logo Header -->
+    <!-- Event Banner Header -->
     <div class="flex flex-col items-center justify-center text-center space-y-2 pt-2">
       <img 
         src="./BCYF 2026 Email Banner (1).png" 
         alt="BCYF 2026 Event Banner" 
-        class="w-full max-h-36 object-contain rounded-2xl shadow-sm mb-1"
+        class="w-full max-h-36 object-contain rounded-2xl shadow-md mb-1"
       >
-      <h1 class="text-2xl font-black text-gray-800 tracking-tight">
-        Digital Passport
+      <h1 class="text-2xl font-black text-white tracking-tight">
+        Event Quest Trail
       </h1>
-      <p id="user-display" class="text-xs font-semibold text-indigo-700 bg-indigo-50/80 border border-indigo-100 py-1 px-3.5 rounded-full inline-block shadow-sm"></p>
+      <p id="user-display" class="text-xs font-semibold text-indigo-300 bg-indigo-900/50 border border-indigo-700/50 py-1 px-3.5 rounded-full inline-block shadow-inner"></p>
     </div>
     
     <!-- Progress Bar Section -->
-    <div class="space-y-2 bg-gray-50/80 p-3.5 rounded-2xl border border-gray-100">
-      <div class="flex justify-between text-xs font-bold text-gray-500 uppercase tracking-wider">
-        <span>Stamp Progress</span>
-        <span id="progress-text" class="text-indigo-600 font-extrabold">0 / 20 Stamps</span>
+    <div class="space-y-2 bg-slate-900/60 p-3.5 rounded-2xl border border-slate-700/50">
+      <div class="flex justify-between text-xs font-bold text-slate-400 uppercase tracking-wider">
+        <span>Journey Progress</span>
+        <span id="progress-text" class="text-emerald-400 font-extrabold">0 / 20 Stations</span>
       </div>
-      <div class="w-full bg-gray-200 rounded-full h-3.5 overflow-hidden p-0.5 border border-gray-200/60">
-        <div id="progress-bar" class="bg-gradient-to-r from-emerald-400 to-teal-500 h-full rounded-full transition-all duration-500 ease-out" style="width: 0%"></div>
+      <div class="w-full bg-slate-700/50 rounded-full h-3.5 overflow-hidden p-0.5 border border-slate-600/40">
+        <div id="progress-bar" class="bg-gradient-to-r from-teal-400 via-emerald-400 to-indigo-500 h-full rounded-full transition-all duration-700 ease-out" style="width: 0%"></div>
       </div>
     </div>
 
     <!-- Camera Scan Button -->
-    <button onclick="openScanner()" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl shadow-lg shadow-indigo-200 flex items-center justify-center gap-2 active:scale-95 transition-all">
+    <button onclick="openScanner()" class="w-full py-3.5 bg-gradient-to-r from-indigo-500 to-emerald-500 hover:from-indigo-600 hover:to-emerald-600 text-white font-bold rounded-2xl shadow-lg shadow-indigo-950 flex items-center justify-center gap-2 active:scale-95 transition-all border border-indigo-400/30">
       Scan Booth QR Code
     </button>
 
-    <!-- 20 Booth Grid -->
-    <div>
-      <div class="flex items-center justify-between mb-3">
-        <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Booths to Visit</p>
-        <span class="text-[10px] text-gray-400 font-medium">Scan booth QR codes to unlock</span>
+    <!-- Roadmap Trail Container -->
+    <div class="bg-slate-900/40 p-4 rounded-3xl border border-slate-700/40 relative">
+      <div class="flex items-center justify-between mb-4">
+        <p class="text-xs font-bold text-indigo-300 uppercase tracking-wider">Interactive Roadmap</p>
+        <span class="text-[10px] text-slate-400 font-medium">Follow the path B01 → B20</span>
       </div>
-      <div id="grid" class="grid grid-cols-4 gap-2.5"></div>
+      
+      <!-- Interactive Snaking Node Trail -->
+      <div id="roadmap-container" class="relative w-full py-2"></div>
     </div>
 
     <!-- Sponsors & Partners Placeholder Section -->
-    <div class="border-t border-gray-100 pt-5 text-center space-y-3">
-      <p class="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Organized & Sponsored By</p>
+    <div class="border-t border-slate-700/60 pt-5 text-center space-y-3">
+      <p class="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Organized & Sponsored By</p>
       <div class="flex items-center justify-center gap-4 flex-wrap opacity-80">
-        <img src="https://via.placeholder.com/90x35?text=Sponsor+1" alt="Sponsor 1" class="h-8 object-contain">
-        <img src="https://via.placeholder.com/90x35?text=Sponsor+2" alt="Sponsor 2" class="h-8 object-contain">
-        <img src="https://via.placeholder.com/90x35?text=Partner+1" alt="Partner 1" class="h-8 object-contain">
+        <img src="https://via.placeholder.com/90x35/1e293b/94a3b8?text=Sponsor+1" alt="Sponsor 1" class="h-8 object-contain">
+        <img src="https://via.placeholder.com/90x35/1e293b/94a3b8?text=Sponsor+2" alt="Sponsor 2" class="h-8 object-contain">
+        <img src="https://via.placeholder.com/90x35/1e293b/94a3b8?text=Partner+1" alt="Partner 1" class="h-8 object-contain">
       </div>
     </div>
 
     <!-- Reset Option -->
     <div class="text-center pt-1">
-      <button onclick="resetPassport()" class="text-[11px] text-gray-400 hover:text-red-500 underline transition-colors">Change Email / Reset Passport</button>
+      <button onclick="resetPassport()" class="text-[11px] text-slate-500 hover:text-red-400 underline transition-colors">Change Email / Reset Passport</button>
     </div>
 
   </div>
 
   <!-- Camera Scanner Modal -->
-  <div id="scanner-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex-col items-center justify-center p-4 z-50">
-    <div class="bg-white rounded-3xl p-6 w-full max-w-sm text-center space-y-4">
-      <h3 class="text-lg font-bold text-gray-800">Scan Booth QR Code</h3>
-      <div id="reader" class="w-full overflow-hidden rounded-2xl border-2 border-gray-200"></div>
-      <button onclick="closeScanner()" class="w-full py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200">Cancel</button>
+  <div id="scanner-modal" class="fixed inset-0 bg-black/85 backdrop-blur-md hidden flex-col items-center justify-center p-4 z-50">
+    <div class="bg-slate-800 border border-slate-700 rounded-3xl p-6 w-full max-w-sm text-center space-y-4">
+      <h3 class="text-lg font-bold text-white">Scan Booth QR Code</h3>
+      <div id="reader" class="w-full overflow-hidden rounded-2xl border-2 border-slate-600 bg-black"></div>
+      <button onclick="closeScanner()" class="w-full py-3 bg-slate-700 text-slate-200 font-bold rounded-xl hover:bg-slate-600">Cancel</button>
     </div>
   </div>
 
@@ -94,9 +103,9 @@
         localStorage.setItem("passport_email", email);
       }
     }
-    document.getElementById("user-display").innerText = email ? `Attendee: ${email}` : "Not logged in";
+    document.getElementById("user-display").innerText = email ? `Explorer: ${email}` : "Not logged in";
 
-    // 2. Load saved stamps and standardize formatting (e.g., 'B01')
+    // 2. Load saved stamps and standardize formatting
     function getSavedStamps() {
       const raw = JSON.parse(localStorage.getItem("passport_stamps") || "[]");
       return raw.map(s => standardizeBoothId(s)).filter(Boolean);
@@ -117,7 +126,7 @@
 
     let stamps = getSavedStamps();
 
-    // 3. Process URL parameter scans (e.g., ?booth=B01)
+    // 3. Process URL parameter scans
     const urlParams = new URLSearchParams(window.location.search);
     const scannedBooth = urlParams.get('booth');
     if (scannedBooth) {
@@ -125,18 +134,18 @@
       window.history.replaceState({}, document.title, window.location.pathname);
     }
 
-    // Helper to add stamp and sync state
+    // Helper to add stamp
     function addStamp(boothId) {
       const formatted = standardizeBoothId(boothId);
       if (formatted && !stamps.includes(formatted)) {
         stamps.push(formatted);
         localStorage.setItem("passport_stamps", JSON.stringify(stamps));
-        alert(`Stamp Unlocked for Booth ${formatted}!`);
+        alert(`Stage Unlocked: ${formatted}!`);
       }
       render();
     }
 
-    // 4. Render Grid & Progress Bar
+    // 4. Render Roadmap Trail
     function render() {
       stamps = getSavedStamps();
       const count = stamps.length;
@@ -144,27 +153,63 @@
       document.getElementById("progress-bar").style.width = percent + "%";
       document.getElementById("progress-text").innerText = `${count} / ${TOTAL} (${percent}%)`;
 
-      const grid = document.getElementById("grid");
-      grid.innerHTML = "";
+      const container = document.getElementById("roadmap-container");
+      container.innerHTML = "";
 
+      // Group booths in rows of 4 (S-curve pattern)
+      const cols = 4;
+      const rows = Math.ceil(TOTAL / cols);
+      
+      let maxStampedIndex = 0;
       for (let i = 1; i <= TOTAL; i++) {
-        const boothId = `B${String(i).padStart(2, '0')}`;
-        const isStamped = stamps.includes(boothId);
-        
-        const card = document.createElement("div");
-        card.className = `p-2.5 rounded-2xl text-center font-bold text-xs flex flex-col items-center justify-center transition-all ${
-          isStamped 
-            ? 'bg-gradient-to-b from-emerald-400 to-teal-500 text-white shadow-md shadow-emerald-200 scale-105' 
-            : 'bg-gray-50 text-gray-400 border border-gray-200/80'
-        }`;
-        card.innerHTML = `
-          <span class="text-[10px] tracking-wider uppercase mb-0.5 ${isStamped ? 'text-white/80' : 'text-gray-400'}">
-            ${isStamped ? 'STAMPED' : 'LOCKED'}
-          </span>
-          <span class="text-sm">${boothId}</span>
-        `;
-        grid.appendChild(card);
+        const id = `B${String(i).padStart(2, '0')}`;
+        if (stamps.includes(id)) {
+          maxStampedIndex = Math.max(maxStampedIndex, i);
+        }
       }
+
+      let gridHtml = `<div class="grid grid-cols-4 gap-y-8 gap-x-2 relative z-10">`;
+
+      for (let r = 0; r < rows; r++) {
+        const isEvenRow = r % 2 === 0;
+        let rowNodes = [];
+
+        for (let c = 0; c < cols; c++) {
+          const index = r * cols + c + 1;
+          if (index <= TOTAL) {
+            rowNodes.push(index);
+          }
+        }
+
+        // Reverse node display order on odd rows to create snaking path
+        if (!isEvenRow) {
+          rowNodes.reverse();
+        }
+
+        rowNodes.forEach(nodeNum => {
+          const boothId = `B${String(nodeNum).padStart(2, '0')}`;
+          const isStamped = stamps.includes(boothId);
+          const isCurrentTraveler = nodeNum === maxStampedIndex;
+
+          gridHtml += `
+            <div class="flex flex-col items-center justify-center relative">
+              <div class="w-12 h-12 rounded-2xl flex flex-col items-center justify-center font-bold text-xs transition-all duration-300 border ${
+                isCurrentTraveler
+                  ? 'bg-emerald-500 text-slate-900 border-white shadow-lg shadow-emerald-500/50 scale-110 active-traveler'
+                  : isStamped
+                  ? 'bg-gradient-to-b from-emerald-500 to-teal-600 text-white border-emerald-300 shadow-md shadow-emerald-900/40'
+                  : 'bg-slate-800 text-slate-500 border-slate-700/80'
+              }">
+                <span class="text-[9px] opacity-75 uppercase tracking-tighter">${isStamped ? 'DONE' : 'BOOTH'}</span>
+                <span class="text-xs font-black">${boothId}</span>
+              </div>
+            </div>
+          `;
+        });
+      }
+
+      gridHtml += `</div>`;
+      container.innerHTML = gridHtml;
     }
 
     // 5. In-App Camera Scanner Functions
@@ -195,7 +240,7 @@
     }
 
     function onScanFailure(error) {
-      // Quiet fail while searching for frame
+      // Quiet fail searching
     }
 
     function resetPassport() {
