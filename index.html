@@ -51,14 +51,14 @@
       Scan Booth QR Code
     </button>
 
-    <!-- Interactive Roadmap Trail -->
+    <!-- Metro Transit Roadmap Trail -->
     <div>
       <div class="flex items-center justify-between mb-3">
         <p class="text-xs font-bold text-blue-900 uppercase tracking-wider">Booths to Visit</p>
         <span class="text-[10px] text-gray-500 font-medium">Scan booth QR codes to unlock</span>
       </div>
       
-      <div id="roadmap-container" class="relative w-full py-2 bg-slate-50 p-4 rounded-3xl border border-slate-100"></div>
+      <div id="roadmap-container" class="relative w-full p-5 bg-slate-50 rounded-3xl border border-slate-100 overflow-hidden"></div>
     </div>
 
     <!-- Sponsors & Partners Placeholder Section -->
@@ -142,7 +142,7 @@
       render();
     }
 
-    // 4. Render Roadmap Trail
+    // 4. Render Metro Transit Route Map
     function render() {
       stamps = getSavedStamps();
       const count = stamps.length;
@@ -155,16 +155,8 @@
 
       const cols = 4;
       const rows = Math.ceil(TOTAL / cols);
-      
-      let maxStampedIndex = 0;
-      for (let i = 1; i <= TOTAL; i++) {
-        const id = `B${String(i).padStart(2, '0')}`;
-        if (stamps.includes(id)) {
-          maxStampedIndex = Math.max(maxStampedIndex, i);
-        }
-      }
 
-      let gridHtml = `<div class="grid grid-cols-4 gap-y-6 gap-x-2 relative z-10">`;
+      let metroHtml = `<div class="relative flex flex-col space-y-7 z-10">`;
 
       for (let r = 0; r < rows; r++) {
         const isEvenRow = r % 2 === 0;
@@ -181,27 +173,38 @@
           rowNodes.reverse();
         }
 
+        // Horizontal connecting track line behind stations
+        metroHtml += `
+          <div class="relative flex items-center justify-between">
+            <div class="absolute left-4 right-4 h-1.5 bg-gray-200 rounded-full top-1/2 -translate-y-1/2 z-0"></div>
+        `;
+
         rowNodes.forEach(nodeNum => {
           const boothId = `B${String(nodeNum).padStart(2, '0')}`;
           const isStamped = stamps.includes(boothId);
+          const isMilestone = nodeNum % 5 === 0; // Major transfer hub every 5 stations
 
-          gridHtml += `
-            <div class="flex flex-col items-center justify-center relative">
-              <div class="w-12 h-12 rounded-2xl flex flex-col items-center justify-center font-bold text-xs transition-all duration-300 border ${
+          metroHtml += `
+            <div class="relative z-10 flex flex-col items-center">
+              <div class="w-12 h-12 rounded-full flex flex-col items-center justify-center font-bold text-xs transition-all duration-300 border-2 ${
                 isStamped
-                  ? 'bg-gradient-to-b from-emerald-400 to-teal-500 text-white border-emerald-300 shadow-md shadow-emerald-100 scale-105'
+                  ? 'bg-gradient-to-b from-emerald-400 to-teal-500 text-white border-white shadow-md shadow-emerald-200 scale-105'
+                  : isMilestone
+                  ? 'bg-white text-blue-900 border-blue-900 shadow-sm'
                   : 'bg-white text-gray-400 border-gray-200 shadow-sm'
               }">
-                <span class="text-[9px] opacity-75 uppercase tracking-tighter">${isStamped ? 'DONE' : 'BOOTH'}</span>
-                <span class="text-xs font-black">${boothId}</span>
+                <span class="text-[8px] opacity-80 font-semibold tracking-tighter">${isStamped ? 'DONE' : isMilestone ? 'HUB' : 'STOP'}</span>
+                <span class="text-[11px] font-black">${boothId}</span>
               </div>
             </div>
           `;
         });
+
+        metroHtml += `</div>`;
       }
 
-      gridHtml += `</div>`;
-      container.innerHTML = gridHtml;
+      metroHtml += `</div>`;
+      container.innerHTML = metroHtml;
     }
 
     // 5. In-App Camera Scanner Functions
