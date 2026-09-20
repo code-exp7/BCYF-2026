@@ -35,14 +35,18 @@
       <p id="user-display" class="text-xs font-semibold text-blue-900 bg-blue-50 border border-blue-100 py-1 px-3.5 rounded-full inline-block shadow-sm"></p>
     </div>
     
-    <!-- Progress Bar Section -->
-    <div class="space-y-2 bg-slate-50 p-3.5 rounded-2xl border border-slate-100">
-      <div class="flex justify-between text-xs font-bold text-blue-900 uppercase tracking-wider">
-        <span>Stamp Progress</span>
-        <span id="progress-text" class="text-blue-950 font-extrabold">0 / 20 Stamps</span>
+    <!-- Duolingo-Style Dynamic Path Progress Bar -->
+    <div class="space-y-3 bg-slate-50 p-4 rounded-3xl border border-slate-100">
+      <div class="flex justify-between items-center text-xs font-bold text-blue-900 uppercase tracking-wider">
+        <span>Quest Progress</span>
+        <span id="progress-text" class="text-blue-950 font-extrabold bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full">0 / 20</span>
       </div>
-      <div class="w-full bg-gray-200 rounded-full h-3.5 overflow-hidden p-0.5 border border-gray-200/60">
-        <div id="progress-bar" class="bg-gradient-to-r from-emerald-400 to-teal-500 h-full rounded-full transition-all duration-500 ease-out" style="width: 0%"></div>
+      
+      <!-- Horizontal Scrollable Node Path -->
+      <div class="relative py-2 overflow-x-auto no-scrollbar">
+        <div id="duo-path" class="flex items-center gap-3 min-w-max px-2">
+          <!-- Dynamic nodes generate here -->
+        </div>
       </div>
     </div>
 
@@ -54,7 +58,7 @@
     <!-- Sticker Album Collection Grid -->
     <div>
       <div class="flex items-center justify-between mb-3">
-        <p class="text-xs font-bold text-blue-900 uppercase tracking-wider">Booths to Visit</p>
+        <p class="text-xs font-bold text-blue-900 uppercase tracking-wider">Passport Collection</p>
         <span class="text-[10px] text-gray-500 font-medium">Scan booth QR codes to unlock</span>
       </div>
       
@@ -126,15 +130,67 @@
     function render() {
       stamps = getSavedStamps();
       const count = stamps.length;
-      const percent = Math.round((count / TOTAL) * 100);
 
-      const progressBar = document.getElementById("progress-bar");
       const progressText = document.getElementById("progress-text");
+      if (progressText) progressText.innerText = `${count} / ${TOTAL} Stamps`;
+
+      // 1. Render Duolingo Dynamic Progress Path
+      const duoPath = document.getElementById("duo-path");
+      if (duoPath) {
+        duoPath.innerHTML = "";
+        for (let step = 1; step <= TOTAL; step++) {
+          const isUnlocked = step <= count;
+          const isCurrentTarget = step === count + 1;
+          const boothCollected = stamps[step - 1]; // Shows which booth filled this slot chronologically
+
+          const stepEl = document.createElement("div");
+          stepEl.className = "flex items-center gap-3";
+
+          if (isUnlocked) {
+            // Completed Node
+            stepEl.innerHTML = `
+              <div class="flex flex-col items-center">
+                <div class="w-9 h-9 rounded-full bg-gradient-to-b from-emerald-400 to-teal-500 text-white flex items-center justify-center font-black text-xs shadow-md shadow-emerald-200 border-2 border-white transform scale-110">
+                  ✓
+                </div>
+                <span class="text-[9px] font-extrabold text-emerald-600 mt-1">${boothCollected}</span>
+              </div>
+            `;
+          } else if (isCurrentTarget) {
+            // Next Active Target (Pulsing Duolingo Style)
+            stepEl.innerHTML = `
+              <div class="flex flex-col items-center">
+                <div class="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center font-black text-xs shadow-md shadow-blue-300 border-2 border-blue-200 animate-bounce">
+                  ${step}
+                </div>
+                <span class="text-[9px] font-bold text-blue-600 mt-1">NEXT</span>
+              </div>
+            `;
+          } else {
+            // Locked Future Node
+            stepEl.innerHTML = `
+              <div class="flex flex-col items-center opacity-40">
+                <div class="w-8 h-8 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center font-bold text-xs border border-gray-300">
+                  ${step}
+                </div>
+                <span class="text-[9px] font-semibold text-gray-400 mt-1">LOCKED</span>
+              </div>
+            `;
+          }
+
+          // Add connecting track line between nodes
+          if (step < TOTAL) {
+            const line = document.createElement("div");
+            line.className = `h-1 w-6 rounded-full ${step <= count ? 'bg-emerald-400' : 'bg-gray-200'}`;
+            stepEl.appendChild(line);
+          }
+
+          duoPath.appendChild(stepEl);
+        }
+      }
+
+      // 2. Render Album Grid
       const grid = document.getElementById("sticker-grid");
-
-      if (progressBar) progressBar.style.width = percent + "%";
-      if (progressText) progressText.innerText = `${count} / ${TOTAL} (${percent}%)`;
-
       if (!grid) return;
       grid.innerHTML = "";
 
