@@ -6,36 +6,54 @@
   <title>Digital Event Passport</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-50 min-h-screen p-4 flex flex-col items-center">
-  <div class="max-w-md w-full bg-white rounded-3xl shadow-xl p-6 space-y-5 border border-gray-100 mt-4 mb-16">
+<body class="bg-gradient-to-br from-indigo-50 via-sky-50 to-emerald-50 min-h-screen p-4 flex flex-col items-center justify-center">
+
+  <!-- Main Passport Card -->
+  <div class="max-w-md w-full bg-white/90 backdrop-blur-md rounded-3xl shadow-2xl p-6 space-y-6 border border-white/60 relative overflow-hidden my-6">
     
-    <!-- Title Section -->
-    <div class="text-center space-y-1">
-      <h1 class="text-2xl font-black text-gray-800 tracking-tight">🎟️ Event Passport</h1>
-      <p id="user-display" class="text-xs font-semibold text-blue-600 bg-blue-50 py-1 px-3 rounded-full inline-block"></p>
+    <!-- Decorative Corner Accents -->
+    <div class="absolute -top-10 -right-10 w-28 h-28 bg-gradient-to-br from-blue-400 to-indigo-600 rounded-full blur-2xl opacity-20 pointer-events-none"></div>
+    <div class="absolute -bottom-10 -left-10 w-28 h-28 bg-gradient-to-tr from-emerald-400 to-teal-500 rounded-full blur-2xl opacity-20 pointer-events-none"></div>
+
+    <!-- Event Banner / Logo Header -->
+    <div class="flex flex-col items-center justify-center text-center space-y-2 pt-2">
+      <!-- Your Uploaded Banner Image -->
+      <img 
+        src="./BCYF 2026 Email Banner (1).png" 
+        alt="BCYF 2026 Event Banner" 
+        class="w-full max-h-36 object-contain rounded-2xl shadow-sm mb-1"
+      >
+      <h1 class="text-2xl font-black text-gray-800 tracking-tight flex items-center gap-1.5">
+        🎟️ Digital Passport
+      </h1>
+      <p id="user-display" class="text-xs font-semibold text-indigo-700 bg-indigo-50/80 border border-indigo-100 py-1 px-3.5 rounded-full inline-block shadow-sm"></p>
     </div>
     
-    <!-- Progress Bar -->
-    <div class="space-y-2">
+    <!-- Progress Bar Section -->
+    <div class="space-y-2 bg-gray-50/80 p-3.5 rounded-2xl border border-gray-100">
       <div class="flex justify-between text-xs font-bold text-gray-500 uppercase tracking-wider">
-        <span>Progress</span>
-        <span id="progress-text">0 / 20 Stamps</span>
+        <span>Stamp Progress</span>
+        <span id="progress-text" class="text-indigo-600 font-extrabold">0 / 20 Stamps</span>
       </div>
-      <div class="w-full bg-gray-100 rounded-full h-4 overflow-hidden p-0.5 border border-gray-200">
-        <div id="progress-bar" class="bg-green-500 h-full rounded-full transition-all duration-500 ease-out" style="width: 0%"></div>
+      <div class="w-full bg-gray-200 rounded-full h-3.5 overflow-hidden p-0.5 border border-gray-200/60">
+        <div id="progress-bar" class="bg-gradient-to-r from-emerald-400 to-teal-500 h-full rounded-full transition-all duration-500 ease-out" style="width: 0%"></div>
       </div>
     </div>
 
     <!-- 20 Booth Grid -->
-    <div class="pt-2">
-      <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Station Stamps</p>
-      <div id="grid" class="grid grid-cols-4 gap-2"></div>
+    <div>
+      <div class="flex items-center justify-between mb-3">
+        <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Booths to Visit</p>
+        <span class="text-[10px] text-gray-400 font-medium">Scan booth QR codes to unlock</span>
+      </div>
+      <div id="grid" class="grid grid-cols-4 gap-2.5"></div>
     </div>
 
     <!-- Reset Option -->
-    <div class="text-center pt-2">
-      <button onclick="resetPassport()" class="text-xs text-gray-400 hover:text-red-500 underline">Change Email / Reset Passport</button>
+    <div class="text-center pt-1">
+      <button onclick="resetPassport()" class="text-[11px] text-gray-400 hover:text-red-500 underline transition-colors">Change Email / Reset Passport</button>
     </div>
+
   </div>
 
   <script>
@@ -78,7 +96,7 @@
       const count = stamps.length;
       const percent = Math.round((count / TOTAL) * 100);
       document.getElementById("progress-bar").style.width = percent + "%";
-      document.getElementById("progress-text").innerText = `${count} / ${TOTAL} Stamps (${percent}%)`;
+      document.getElementById("progress-text").innerText = `${count} / ${TOTAL} (${percent}%)`;
 
       const grid = document.getElementById("grid");
       grid.innerHTML = "";
@@ -88,14 +106,14 @@
         const isStamped = stamps.includes(boothId);
         
         const card = document.createElement("div");
-        card.className = `p-3 rounded-2xl text-center font-bold text-xs flex flex-col items-center justify-center transition-all ${
+        card.className = `p-2.5 rounded-2xl text-center font-bold text-xs flex flex-col items-center justify-center transition-all ${
           isStamped 
-            ? 'bg-green-500 text-white shadow-md shadow-green-100 scale-105' 
-            : 'bg-gray-100 text-gray-400 border border-gray-200'
+            ? 'bg-gradient-to-b from-emerald-400 to-teal-500 text-white shadow-md shadow-emerald-200 scale-105' 
+            : 'bg-gray-50 text-gray-400 border border-gray-200/80'
         }`;
         card.innerHTML = isStamped 
-          ? `<span class="text-base mb-0.5">✅</span><span>${boothId}</span>`
-          : `<span class="text-xs mb-0.5 opacity-40">🔒</span><span>${boothId}</span>`;
+          ? `<span class="text-sm mb-0.5">✅</span><span>${boothId}</span>`
+          : `<span class="text-[10px] mb-0.5 opacity-40">🔒</span><span>${boothId}</span>`;
         grid.appendChild(card);
       }
     }
