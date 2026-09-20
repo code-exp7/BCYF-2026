@@ -99,20 +99,18 @@
     let html5QrcodeScanner = null;
     let stamps = [];
 
-    // Extract formatted booth ID like "B01" from any URL or raw input
+    // Safely parse raw QR text, full URLs, parameter strings, or simple numbers
     function standardizeBoothId(input) {
       if (!input) return null;
-      let rawVal = String(input).trim();
+      let rawVal = String(input).trim().replace(/^["']|["']$/g, '');
 
-      if (rawVal.includes("http://") || rawVal.includes("https://") || rawVal.includes("booth=")) {
-        try {
-          const urlObj = new URL(rawVal, window.location.origin);
-          const param = urlObj.searchParams.get("booth");
-          if (param) rawVal = param.trim();
-        } catch (e) {
-          const matchParam = rawVal.match(/booth=([^&/#]+)/i);
-          if (matchParam) rawVal = matchParam[1].trim();
-        }
+      try {
+        rawVal = decodeURIComponent(rawVal);
+      } catch (e) {}
+
+      if (rawVal.includes("booth=")) {
+        const matchParam = rawVal.match(/booth=([^&/#\s]+)/i);
+        if (matchParam) rawVal = matchParam[1].trim();
       }
 
       const match = rawVal.match(/(?:b|booth)?\s*[-_:]?\s*(\d+)/i);
@@ -177,7 +175,7 @@
           stepEl.className = "flex items-center gap-3";
 
           if (isUnlocked) {
-            // Unlocked Step (Turns Green ✓)
+            // Unlocked Step (Green ✓)
             stepEl.innerHTML = `
               <div class="flex flex-col items-center">
                 <div class="w-9 h-9 rounded-full bg-gradient-to-b from-emerald-400 to-teal-500 text-white flex items-center justify-center font-black text-xs shadow-md shadow-emerald-200 border-2 border-white transform scale-110">
@@ -187,7 +185,7 @@
               </div>
             `;
           } else if (isNextTarget) {
-            // Next required booth in sequence (Blue Pulsing)
+            // Next required booth target (Blue Pulsing)
             stepEl.innerHTML = `
               <div class="flex flex-col items-center">
                 <div class="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center font-black text-xs shadow-md shadow-blue-300 border-2 border-blue-200 animate-bounce">
@@ -284,7 +282,23 @@
         modal.classList.add("flex");
       }
 
-      html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: { width: 220, height: 220 } });
+      if (html5QrcodeScanner) {
+        html5QrcodeScanner.clear().catch(() => {});
+      }
+
+      const config = {
+        fps: 15,
+        qrbox: (viewfinderWidth, viewfinderHeight) => {
+          const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+          return {
+            width: Math.floor(minEdge * 0.75),
+            height: Math.floor(minEdge * 0.75)
+          };
+        },
+        aspectRatio: 1.0
+      };
+
+      html5QrcodeScanner = new Html5QrcodeScanner("reader", config, false);
       html5QrcodeScanner.render(onScanSuccess, onScanFailure);
     }
 
@@ -305,7 +319,7 @@
     }
 
     function onScanFailure(error) {
-      // Quiet fail while searching
+      // Suppress frame-by-frame scanner exceptions
     }
 
     function resetPassport() {
