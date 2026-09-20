@@ -51,14 +51,17 @@
       Scan Booth QR Code
     </button>
 
-    <!-- Metro Transit Roadmap Trail -->
+    <!-- Sticker Album Collection Grid -->
     <div>
       <div class="flex items-center justify-between mb-3">
         <p class="text-xs font-bold text-blue-900 uppercase tracking-wider">Booths to Visit</p>
         <span class="text-[10px] text-gray-500 font-medium">Scan booth QR codes to unlock</span>
       </div>
       
-      <div id="roadmap-container" class="relative w-full p-5 bg-slate-50 rounded-3xl border border-slate-100 overflow-hidden"></div>
+      <div id="album-container" class="bg-slate-50 p-4 rounded-3xl border border-slate-100">
+        <!-- 4 Column Sticker Album Grid -->
+        <div id="sticker-grid" class="grid grid-cols-4 gap-3"></div>
+      </div>
     </div>
 
     <!-- Sponsors & Partners Placeholder Section -->
@@ -73,7 +76,7 @@
 
     <!-- Reset Option -->
     <div class="text-center pt-1">
-      <button onclick="resetPassport()" class="text-[11px] text-gray-400 hover:text-red-500 underline transition-colors">Change Email / Reset Passport</button>
+      <button onclick="resetPassport()" class="text-[11px] text-gray-400 hover:text-red-500 underline transition-colors">Change Username / Reset Passport</button>
     </div>
 
   </div>
@@ -91,16 +94,16 @@
     const TOTAL = 20;
     let html5QrcodeScanner = null;
 
-    // 1. Retrieve or prompt for attendee email
-    let email = localStorage.getItem("passport_email");
-    if (!email) {
-      email = prompt("Welcome! Please enter your email address to start your passport:");
-      if (email && email.trim() !== "") {
-        email = email.trim();
-        localStorage.setItem("passport_email", email);
+    // 1. Retrieve or prompt for attendee username
+    let username = localStorage.getItem("passport_username");
+    if (!username) {
+      username = prompt("Welcome! Please enter your Username to start your passport:");
+      if (username && username.trim() !== "") {
+        username = username.trim();
+        localStorage.setItem("passport_username", username);
       }
     }
-    document.getElementById("user-display").innerText = email ? `Attendee: ${email}` : "Not logged in";
+    document.getElementById("user-display").innerText = username ? `User: ${username}` : "Not logged in";
 
     // 2. Load saved stamps and standardize formatting
     function getSavedStamps() {
@@ -142,7 +145,7 @@
       render();
     }
 
-    // 4. Render Metro Transit Route Map
+    // 4. Render Sticker Album Collector Grid
     function render() {
       stamps = getSavedStamps();
       const count = stamps.length;
@@ -150,61 +153,36 @@
       document.getElementById("progress-bar").style.width = percent + "%";
       document.getElementById("progress-text").innerText = `${count} / ${TOTAL} (${percent}%)`;
 
-      const container = document.getElementById("roadmap-container");
-      container.innerHTML = "";
+      const grid = document.getElementById("sticker-grid");
+      grid.innerHTML = "";
 
-      const cols = 4;
-      const rows = Math.ceil(TOTAL / cols);
+      for (let i = 1; i <= TOTAL; i++) {
+        const boothId = `B${String(i).padStart(2, '0')}`;
+        const isStamped = stamps.includes(boothId);
 
-      let metroHtml = `<div class="relative flex flex-col space-y-7 z-10">`;
+        const slot = document.createElement("div");
+        slot.className = "flex flex-col items-center justify-center";
 
-      for (let r = 0; r < rows; r++) {
-        const isEvenRow = r % 2 === 0;
-        let rowNodes = [];
-
-        for (let c = 0; c < cols; c++) {
-          const index = r * cols + c + 1;
-          if (index <= TOTAL) {
-            rowNodes.push(index);
-          }
-        }
-
-        if (!isEvenRow) {
-          rowNodes.reverse();
-        }
-
-        // Horizontal connecting track line behind stations
-        metroHtml += `
-          <div class="relative flex items-center justify-between">
-            <div class="absolute left-4 right-4 h-1.5 bg-gray-200 rounded-full top-1/2 -translate-y-1/2 z-0"></div>
-        `;
-
-        rowNodes.forEach(nodeNum => {
-          const boothId = `B${String(nodeNum).padStart(2, '0')}`;
-          const isStamped = stamps.includes(boothId);
-          const isMilestone = nodeNum % 5 === 0; // Major transfer hub every 5 stations
-
-          metroHtml += `
-            <div class="relative z-10 flex flex-col items-center">
-              <div class="w-12 h-12 rounded-full flex flex-col items-center justify-center font-bold text-xs transition-all duration-300 border-2 ${
-                isStamped
-                  ? 'bg-gradient-to-b from-emerald-400 to-teal-500 text-white border-white shadow-md shadow-emerald-200 scale-105'
-                  : isMilestone
-                  ? 'bg-white text-blue-900 border-blue-900 shadow-sm'
-                  : 'bg-white text-gray-400 border-gray-200 shadow-sm'
-              }">
-                <span class="text-[8px] opacity-80 font-semibold tracking-tighter">${isStamped ? 'DONE' : isMilestone ? 'HUB' : 'STOP'}</span>
-                <span class="text-[11px] font-black">${boothId}</span>
-              </div>
+        if (isStamped) {
+          // Unlocked Sticker Slot
+          slot.innerHTML = `
+            <div class="w-full aspect-square rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-500 text-white flex flex-col items-center justify-center shadow-md shadow-emerald-100 border border-emerald-300 transform scale-105 transition-all">
+              <span class="text-[9px] font-extrabold uppercase tracking-widest text-emerald-100">STAMPED</span>
+              <span class="text-sm font-black tracking-tight">${boothId}</span>
             </div>
           `;
-        });
+        } else {
+          // Empty Stamp Slot
+          slot.innerHTML = `
+            <div class="w-full aspect-square rounded-2xl bg-white text-gray-300 flex flex-col items-center justify-center border-2 border-dashed border-gray-200 shadow-sm transition-all">
+              <span class="text-[9px] font-bold uppercase tracking-wider text-gray-400">BOOTH</span>
+              <span class="text-xs font-black text-gray-400">${boothId}</span>
+            </div>
+          `;
+        }
 
-        metroHtml += `</div>`;
+        grid.appendChild(slot);
       }
-
-      metroHtml += `</div>`;
-      container.innerHTML = metroHtml;
     }
 
     // 5. In-App Camera Scanner Functions
@@ -239,7 +217,7 @@
     }
 
     function resetPassport() {
-      if (confirm("Reset local stamp history and change email?")) {
+      if (confirm("Reset local stamp history and change username?")) {
         localStorage.clear();
         location.reload();
       }
