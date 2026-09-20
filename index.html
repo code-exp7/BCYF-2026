@@ -35,10 +35,10 @@
       <p id="user-display" class="text-xs font-semibold text-blue-900 bg-blue-50 border border-blue-100 py-1 px-3.5 rounded-full inline-block shadow-sm"></p>
     </div>
     
-    <!-- Duolingo-Style Dynamic Path Progress Bar -->
+    <!-- Duolingo-Style Sequential Path Progress Bar -->
     <div class="space-y-3 bg-slate-50 p-4 rounded-3xl border border-slate-100">
       <div class="flex justify-between items-center text-xs font-bold text-blue-900 uppercase tracking-wider">
-        <span>Quest Progress</span>
+        <span>Quest Path</span>
         <span id="progress-text" class="text-blue-950 font-extrabold bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full">0 / 20</span>
       </div>
       
@@ -59,7 +59,7 @@
     <div>
       <div class="flex items-center justify-between mb-3">
         <p class="text-xs font-bold text-blue-900 uppercase tracking-wider">Passport Collection</p>
-        <span class="text-[10px] text-gray-500 font-medium">Scan booth QR codes in any order</span>
+        <span class="text-[10px] text-gray-500 font-medium">Scan any booth to collect</span>
       </div>
       
       <div id="album-container" class="bg-slate-50 p-4 rounded-3xl border border-slate-100">
@@ -141,30 +141,40 @@
       const progressText = document.getElementById("progress-text");
       if (progressText) progressText.innerText = `${count} / ${TOTAL} Stamps`;
 
-      // 1. Render Duolingo Dynamic Progress Path (Flexible step order)
+      // Find the lowest numbered booth that hasn't been scanned yet to mark as NEXT
+      let nextRequiredBoothNum = TOTAL + 1;
+      for (let i = 1; i <= TOTAL; i++) {
+        const bId = `B${String(i).padStart(2, '0')}`;
+        if (!stamps.includes(bId)) {
+          nextRequiredBoothNum = i;
+          break;
+        }
+      }
+
+      // 1. Render Path linked directly to Booth 1 -> Booth 20
       const duoPath = document.getElementById("duo-path");
       if (duoPath) {
         duoPath.innerHTML = "";
         for (let step = 1; step <= TOTAL; step++) {
-          const isUnlocked = step <= count;
-          const isCurrentTarget = step === count + 1;
-          const boothCollected = stamps[step - 1]; // Shows booth collected at this progression step
+          const stepBoothId = `B${String(step).padStart(2, '0')}`;
+          const isUnlocked = stamps.includes(stepBoothId);
+          const isNextTarget = step === nextRequiredBoothNum;
 
           const stepEl = document.createElement("div");
           stepEl.className = "flex items-center gap-3";
 
           if (isUnlocked) {
-            // Completed Step
+            // Unlocked Step (Specific Booth Completed)
             stepEl.innerHTML = `
               <div class="flex flex-col items-center">
                 <div class="w-9 h-9 rounded-full bg-gradient-to-b from-emerald-400 to-teal-500 text-white flex items-center justify-center font-black text-xs shadow-md shadow-emerald-200 border-2 border-white transform scale-110">
                   ✓
                 </div>
-                <span class="text-[9px] font-extrabold text-emerald-600 mt-1">${boothCollected}</span>
+                <span class="text-[9px] font-extrabold text-emerald-600 mt-1">${stepBoothId}</span>
               </div>
             `;
-          } else if (isCurrentTarget) {
-            // Next Active Progress Node
+          } else if (isNextTarget) {
+            // Next sequential booth to visit
             stepEl.innerHTML = `
               <div class="flex flex-col items-center">
                 <div class="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center font-black text-xs shadow-md shadow-blue-300 border-2 border-blue-200 animate-bounce">
@@ -174,21 +184,21 @@
               </div>
             `;
           } else {
-            // Future Locked Progress Node
+            // Locked Booth Step
             stepEl.innerHTML = `
               <div class="flex flex-col items-center opacity-40">
                 <div class="w-8 h-8 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center font-bold text-xs border border-gray-300">
                   ${step}
                 </div>
-                <span class="text-[9px] font-semibold text-gray-400 mt-1">LOCKED</span>
+                <span class="text-[9px] font-semibold text-gray-400 mt-1">B${String(step).padStart(2, '0')}</span>
               </div>
             `;
           }
 
-          // Connecting line between steps
+          // Connecting line between path steps
           if (step < TOTAL) {
             const line = document.createElement("div");
-            line.className = `h-1 w-6 rounded-full ${step <= count ? 'bg-emerald-400' : 'bg-gray-200'}`;
+            line.className = `h-1 w-6 rounded-full ${isUnlocked ? 'bg-emerald-400' : 'bg-gray-200'}`;
             stepEl.appendChild(line);
           }
 
