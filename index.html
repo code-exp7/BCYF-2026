@@ -59,7 +59,7 @@
     <div>
       <div class="flex items-center justify-between mb-3">
         <p class="text-xs font-bold text-blue-900 uppercase tracking-wider">Passport Collection</p>
-        <span class="text-[10px] text-gray-500 font-medium">Scan booth QR codes to unlock</span>
+        <span class="text-[10px] text-gray-500 font-medium">Scan booth QR codes in any order</span>
       </div>
       
       <div id="album-container" class="bg-slate-50 p-4 rounded-3xl border border-slate-100">
@@ -119,10 +119,17 @@
 
     function addStamp(boothId) {
       const formatted = standardizeBoothId(boothId);
-      if (formatted && !stamps.includes(formatted)) {
+      if (!formatted) {
+        alert("Invalid QR Code scanned!");
+        return;
+      }
+
+      if (stamps.includes(formatted)) {
+        alert(`You have already scanned ${formatted}!`);
+      } else {
         stamps.push(formatted);
         localStorage.setItem("passport_stamps", JSON.stringify(stamps));
-        alert(`Stamp Unlocked for Booth ${formatted}!`);
+        alert(`Stamp Unlocked for ${formatted}!`);
       }
       render();
     }
@@ -134,20 +141,20 @@
       const progressText = document.getElementById("progress-text");
       if (progressText) progressText.innerText = `${count} / ${TOTAL} Stamps`;
 
-      // 1. Render Duolingo Dynamic Progress Path
+      // 1. Render Duolingo Dynamic Progress Path (Flexible step order)
       const duoPath = document.getElementById("duo-path");
       if (duoPath) {
         duoPath.innerHTML = "";
         for (let step = 1; step <= TOTAL; step++) {
           const isUnlocked = step <= count;
           const isCurrentTarget = step === count + 1;
-          const boothCollected = stamps[step - 1]; // Shows which booth filled this slot chronologically
+          const boothCollected = stamps[step - 1]; // Shows booth collected at this progression step
 
           const stepEl = document.createElement("div");
           stepEl.className = "flex items-center gap-3";
 
           if (isUnlocked) {
-            // Completed Node
+            // Completed Step
             stepEl.innerHTML = `
               <div class="flex flex-col items-center">
                 <div class="w-9 h-9 rounded-full bg-gradient-to-b from-emerald-400 to-teal-500 text-white flex items-center justify-center font-black text-xs shadow-md shadow-emerald-200 border-2 border-white transform scale-110">
@@ -157,7 +164,7 @@
               </div>
             `;
           } else if (isCurrentTarget) {
-            // Next Active Target (Pulsing Duolingo Style)
+            // Next Active Progress Node
             stepEl.innerHTML = `
               <div class="flex flex-col items-center">
                 <div class="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center font-black text-xs shadow-md shadow-blue-300 border-2 border-blue-200 animate-bounce">
@@ -167,7 +174,7 @@
               </div>
             `;
           } else {
-            // Locked Future Node
+            // Future Locked Progress Node
             stepEl.innerHTML = `
               <div class="flex flex-col items-center opacity-40">
                 <div class="w-8 h-8 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center font-bold text-xs border border-gray-300">
@@ -178,7 +185,7 @@
             `;
           }
 
-          // Add connecting track line between nodes
+          // Connecting line between steps
           if (step < TOTAL) {
             const line = document.createElement("div");
             line.className = `h-1 w-6 rounded-full ${step <= count ? 'bg-emerald-400' : 'bg-gray-200'}`;
@@ -189,7 +196,7 @@
         }
       }
 
-      // 2. Render Album Grid
+      // 2. Render Passport Collection Album Grid
       const grid = document.getElementById("sticker-grid");
       if (!grid) return;
       grid.innerHTML = "";
