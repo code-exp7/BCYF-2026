@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Digital Event Passport</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen p-4 flex flex-col items-center">
+  <div class="max-w-md w-full bg-white rounded-3xl shadow-xl p-6 space-y-5 border border-gray-100 mt-4">
+    
+    <!-- Title Section -->
+    <div class="text-center space-y-1">
+      <h1 class="text-2xl font-black text-gray-800 tracking-tight">🎟️ Event Passport</h1>
+      <p id="user-display" class="text-xs font-semibold text-blue-600 bg-blue-50 py-1 px-3 rounded-full inline-block"></p>
+    </div>
+    
+    <!-- Progress Bar -->
+    <div class="space-y-2">
+      <div class="flex justify-between text-xs font-bold text-gray-500 uppercase tracking-wider">
+        <span>Progress</span>
+        <span id="progress-text">0 / 20 Stamps</span>
+      </div>
+      <div class="w-full bg-gray-100 rounded-full h-4 overflow-hidden p-0.5 border border-gray-200">
+        <div id="progress-bar" class="bg-green-500 h-full rounded-full transition-all duration-500 ease-out" style="width: 0%"></div>
+      </div>
+    </div>
+
+    <!-- 20 Booth Grid -->
+    <div class="pt-2">
+      <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Station Stamps</p>
+      <div id="grid" class="grid grid-cols-4 gap-2"></div>
+    </div>
+
+    <!-- Reset Option -->
+    <div class="text-center pt-2">
+      <button onclick="resetPassport()" class="text-xs text-gray-400 hover:text-red-500 underline">Change Email / Reset Passport</button>
+    </div>
+  </div>
+
+  <script>
+    const TOTAL = 20;
+
+    // 1. Retrieve or prompt for attendee email
+    let email = localStorage.getItem("passport_email");
+    if (!email) {
+      email = prompt("Welcome! Please enter your email address to start your passport:");
+      if (email && email.trim() !== "") {
+        email = email.trim();
+        localStorage.setItem("passport_email", email);
+      }
+    }
+    document.getElementById("user-display").innerText = email ? `Attendee: ${email}` : "Not logged in";
+
+    // 2. Load saved stamps from LocalStorage
+    let stamps = JSON.parse(localStorage.getItem("passport_stamps") || "[]");
+
+    // 3. Detect QR code scan via URL parameter (e.g., ?booth=B01)
+    const urlParams = new URLSearchParams(window.location.search);
+    const scannedBooth = urlParams.get('booth');
+
+    if (scannedBooth) {
+      const cleanBooth = scannedBooth.toUpperCase().trim();
+      if (!stamps.includes(cleanBooth)) {
+        stamps.push(cleanBooth);
+        localStorage.setItem("passport_stamps", JSON.stringify(stamps));
+        alert(`🎉 Stamp Collected! You checked in at Booth ${cleanBooth}.`);
+      }
+      // Clean URL query parameters after processing scan
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
+    // 4. Render Progress Bar & Cards
+    const count = stamps.length;
+    const percent = Math.round((count / TOTAL) * 100);
+    document.getElementById("progress-bar").style.width = percent + "%";
+    document.getElementById("progress-text").innerText = `${count} / ${TOTAL} Stamps (${percent}%)`;
+
+    const grid = document.getElementById("grid");
+    grid.innerHTML = "";
+
+    for (let i = 1; i <= TOTAL; i++) {
+      const boothId = `B${String(i).padStart(2, '0')}`;
+      const isStamped = stamps.includes(boothId);
+      
+      const card = document.createElement("div");
+      card.className = `p-3 rounded-2xl text-center font-bold text-xs flex flex-col items-center justify-center transition-all ${
+        isStamped 
+          ? 'bg-green-500 text-white shadow-md shadow-green-100 scale-105' 
+          : 'bg-gray-100 text-gray-400 border border-gray-200'
+      }`;
+      card.innerHTML = isStamped 
+        ? `<span class="text-base mb-0.5">✅</span><span>${boothId}</span>`
+        : `<span class="text-xs mb-0.5 opacity-40">🔒</span><span>${boothId}</span>`;
+      grid.appendChild(card);
+    }
+
+    function resetPassport() {
+      if (confirm("Reset local stamp history and change email?")) {
+        localStorage.clear();
+        location.reload();
+      }
+    }
+  </script>
+</body>
+</html>
