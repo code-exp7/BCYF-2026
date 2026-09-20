@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Digital Event Passport</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- HTML5 QR Code Scanner Library -->
+  <script src="https://unpkg.com/html5-qrcode"></script>
 </head>
 <body class="bg-gradient-to-br from-indigo-50 via-sky-50 to-emerald-50 min-h-screen p-4 flex flex-col items-center justify-center">
 
@@ -17,7 +19,6 @@
 
     <!-- Event Banner / Logo Header -->
     <div class="flex flex-col items-center justify-center text-center space-y-2 pt-2">
-      <!-- Your Uploaded Banner Image -->
       <img 
         src="./BCYF 2026 Email Banner (1).png" 
         alt="BCYF 2026 Event Banner" 
@@ -40,6 +41,11 @@
       </div>
     </div>
 
+    <!-- Camera Scan Button -->
+    <button onclick="openScanner()" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl shadow-lg shadow-indigo-200 flex items-center justify-center gap-2 active:scale-95 transition-all">
+      <span class="text-lg">📷</span> Scan Booth QR Code
+    </button>
+
     <!-- 20 Booth Grid -->
     <div>
       <div class="flex items-center justify-between mb-3">
@@ -49,6 +55,17 @@
       <div id="grid" class="grid grid-cols-4 gap-2.5"></div>
     </div>
 
+    <!-- Sponsors & Partners Placeholder Section -->
+    <div class="border-t border-gray-100 pt-5 text-center space-y-3">
+      <p class="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Organized & Sponsored By</p>
+      <div class="flex items-center justify-center gap-4 flex-wrap opacity-80">
+        <!-- Replace the src attributes below with your partner/sponsor logo filenames (e.g. ./sponsor1.png) -->
+        <img src="https://via.placeholder.com/90x35?text=Sponsor+1" alt="Sponsor 1" class="h-8 object-contain">
+        <img src="https://via.placeholder.com/90x35?text=Sponsor+2" alt="Sponsor 2" class="h-8 object-contain">
+        <img src="https://via.placeholder.com/90x35?text=Partner+1" alt="Partner 1" class="h-8 object-contain">
+      </div>
+    </div>
+
     <!-- Reset Option -->
     <div class="text-center pt-1">
       <button onclick="resetPassport()" class="text-[11px] text-gray-400 hover:text-red-500 underline transition-colors">Change Email / Reset Passport</button>
@@ -56,8 +73,18 @@
 
   </div>
 
+  <!-- Camera Scanner Modal -->
+  <div id="scanner-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex-col items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-3xl p-6 w-full max-w-sm text-center space-y-4">
+      <h3 class="text-lg font-bold text-gray-800">Scan Booth QR Code</h3>
+      <div id="reader" class="w-full overflow-hidden rounded-2xl border-2 border-gray-200"></div>
+      <button onclick="closeScanner()" class="w-full py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200">Cancel</button>
+    </div>
+  </div>
+
   <script>
     const TOTAL = 20;
+    let html5QrcodeScanner = null;
 
     // 1. Retrieve or prompt for attendee email
     let email = localStorage.getItem("passport_email");
@@ -88,6 +115,7 @@
         stamps.push(cleanBooth);
         localStorage.setItem("passport_stamps", JSON.stringify(stamps));
         alert(`🎉 Stamp Unlocked for Booth ${cleanBooth}!`);
+        render();
       }
     }
 
@@ -116,6 +144,37 @@
           : `<span class="text-[10px] mb-0.5 opacity-40">🔒</span><span>${boothId}</span>`;
         grid.appendChild(card);
       }
+    }
+
+    // 5. In-App Camera Scanner Functions
+    function openScanner() {
+      document.getElementById("scanner-modal").classList.remove("hidden");
+      document.getElementById("scanner-modal").classList.add("flex");
+
+      html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: { width: 220, height: 220 } });
+      html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+    }
+
+    function closeScanner() {
+      if (html5QrcodeScanner) {
+        html5QrcodeScanner.clear().catch(error => console.error(error));
+      }
+      document.getElementById("scanner-modal").classList.add("hidden");
+      document.getElementById("scanner-modal").classList.remove("flex");
+    }
+
+    function onScanSuccess(decodedText) {
+      closeScanner();
+      if (decodedText.includes("booth=")) {
+        const match = decodedText.match(/booth=([^&]+)/);
+        if (match) addStamp(match[1]);
+      } else {
+        addStamp(decodedText);
+      }
+    }
+
+    function onScanFailure(error) {
+      // Quiet fail while searching for frame
     }
 
     function resetPassport() {
