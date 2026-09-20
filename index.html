@@ -99,12 +99,27 @@
     let html5QrcodeScanner = null;
     let stamps = [];
 
+    // Safely extract booth ID whether input is raw "B06", "6", or full URL "https://.../?booth=B06"
     function standardizeBoothId(input) {
       if (!input) return null;
-      const clean = input.toUpperCase().trim();
-      const match = clean.match(/B?(\d+)/);
-      if (match) {
-        const num = parseInt(match[1], 10);
+      let rawVal = input.trim();
+
+      // If full URL, parse query params directly
+      if (rawVal.includes("http://") || rawVal.includes("https://") || rawVal.includes("booth=")) {
+        try {
+          const urlObj = new URL(rawVal, window.location.origin);
+          const param = urlObj.searchParams.get("booth");
+          if (param) rawVal = param.trim();
+        } catch (e) {
+          const matchParam = rawVal.match(/booth=([^&]+)/i);
+          if (matchParam) rawVal = matchParam[1].trim();
+        }
+      }
+
+      // Extract trailing digits specifically (e.g. from B06, B6, or 6)
+      const digitsMatch = rawVal.match(/(\d+)$/);
+      if (digitsMatch) {
+        const num = parseInt(digitsMatch[1], 10);
         if (num >= 1 && num <= TOTAL) {
           return `B${String(num).padStart(2, '0')}`;
         }
@@ -164,7 +179,7 @@
           stepEl.className = "flex items-center gap-3";
 
           if (isUnlocked) {
-            // Unlocked Step (Specific Booth Completed)
+            // Unlocked Step
             stepEl.innerHTML = `
               <div class="flex flex-col items-center">
                 <div class="w-9 h-9 rounded-full bg-gradient-to-b from-emerald-400 to-teal-500 text-white flex items-center justify-center font-black text-xs shadow-md shadow-emerald-200 border-2 border-white transform scale-110">
@@ -174,7 +189,7 @@
               </div>
             `;
           } else if (isNextTarget) {
-            // Next sequential booth to visit
+            // Next required booth in sequence
             stepEl.innerHTML = `
               <div class="flex flex-col items-center">
                 <div class="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center font-black text-xs shadow-md shadow-blue-300 border-2 border-blue-200 animate-bounce">
@@ -184,7 +199,7 @@
               </div>
             `;
           } else {
-            // Locked Booth Step
+            // Locked Step
             stepEl.innerHTML = `
               <div class="flex flex-col items-center opacity-40">
                 <div class="w-8 h-8 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center font-bold text-xs border border-gray-300">
@@ -288,12 +303,7 @@
 
     function onScanSuccess(decodedText) {
       closeScanner();
-      if (decodedText.includes("booth=")) {
-        const match = decodedText.match(/booth=([^&]+)/);
-        if (match) addStamp(match[1]);
-      } else {
-        addStamp(decodedText);
-      }
+      addStamp(decodedText);
     }
 
     function onScanFailure(error) {
