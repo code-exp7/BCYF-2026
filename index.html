@@ -5,8 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Digital Event Passport</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- HTML5 QR Code Scanner Library -->
+  <!-- HTML5 QR Code Scanner Library (Camera Feed) -->
   <script src="https://unpkg.com/html5-qrcode"></script>
+  <!-- jsQR Library (High-accuracy static image decoder) -->
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
   <style>
     body {
       background-image: url('./Background.png');
@@ -496,56 +498,97 @@
     }
 
     /**
-     * Adds a white padding quiet zone around uploaded images so ZXing can detect tightly-cropped QR codes.
+     * Resizes high-res images (Adobe Express / Canva) to ~600px 
+     * and decodes pixel data using jsQR for maximum reliability.
      */
-    function addQuietZoneToImage(file) {
-      return new Promise((resolve) => {
+    function decodeFileWithJsQR(file) {
+      return new Promise((resolve, reject) => {
         const img = new Image();
         const url = URL.createObjectURL(file);
-        
+
         img.onload = () => {
-          const padding = 50;
-          const canvas = document.createElement('canvas');
-          canvas.width = img.width + (padding * 2);
-          canvas.height = img.height + (padding * 2);
-          
-          const ctx = canvas.getContext('2d');
-          ctx.fillStyle = '#FFFFFF';
+          // Normalize dimension to ~600px (sweet spot for jsQR)
+          const MAX_DIM = 600;
+          let w = img.width;
+          let h = img.height;
+
+          if (w > MAX_DIM || h > MAX_DIM) {
+            if (w > h) {
+              h = Math.round((h * MAX_DIM) / w);
+              w = MAX_DIM;
+            } else {
+              w = Math.round((w * MAX_DIM) / h);
+              h = MAX_DIM;
+            }
+          }
+
+          const padding = 50; // White border padding
+          const canvas = document.createElement("canvas");
+          canvas.width = w + (padding * 2);
+          canvas.height = h + (padding * 2);
+
+          const ctx = canvas.getContext("2d");
+          ctx.fillStyle = "#FFFFFF";
           ctx.fillRect(0, 0, canvas.width, canvas.height);
-          ctx.drawImage(img, padding, padding);
+          ctx.drawImage(img, padding, padding, w, h);
+
+          URL.revokeObjectURL(url);
+
+          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
           
-          canvas.toBlob((blob) => {
-            URL.revokeObjectURL(url);
-            const paddedFile = new File([blob], file.name, { type: file.type || 'image/png' });
-            resolve(paddedFile);
-          }, file.type || 'image/png');
+          // Try standard detection
+          let code = jsQR(imageData.data, imageData.width, imageData.height, {
+            inversionAttempts: "dontInvert"
+          });
+
+          // Fallback to inverted detection
+          if (!code || !code.data) {
+            code = jsQR(imageData.data, imageData.width, imageData.height, {
+              inversionAttempts: "attemptBoth"
+            });
+          }
+
+          if (code && code.data) {
+            resolve(code.data);
+          } else {
+            reject(new Error("jsQR could not find a valid QR code pattern."));
+          }
         };
 
-        img.onerror = () => resolve(file);
+        img.onerror = (e) => {
+          URL.revokeObjectURL(url);
+          reject(e);
+        };
+
         img.src = url;
       });
     }
 
     async function handleFileUpload(event) {
-      const originalFile = event.target.files[0];
-      if (!originalFile) return;
+      const file = event.target.files[0];
+      if (!file) return;
 
       await closeScanner();
 
-      if (!html5QrCode) {
-        html5QrCode = new Html5Qrcode("reader");
-      }
-
       try {
-        const paddedFile = await addQuietZoneToImage(originalFile);
-        const decodedText = await html5QrCode.scanFile(paddedFile, false);
+        // Attempt 1: Fast & Resilient Canvas-based jsQR engine
+        const decodedText = await decodeFileWithJsQR(file);
         addStamp(decodedText, "upload");
-      } catch (err) {
-        showToast(
-          "QR Code Not Found",
-          "Could not detect a clear QR code in this image. Please try a clearer photo.",
-          false
-        );
+      } catch (err1) {
+        // Attempt 2: Fallback to html5QrCode library scan
+        try {
+          if (!html5QrCode) {
+            html5QrCode = new Html5Qrcode("reader");
+          }
+          const decodedText = await html5QrCode.scanFile(file, false);
+          addStamp(decodedText, "upload");
+        } catch (err2) {
+          showToast(
+            "QR Code Not Found",
+            "Could not detect a clear QR code in this image. Please try uploading a direct screenshot or clearer photo.",
+            false
+          );
+        }
       } finally {
         event.target.value = "";
       }
