@@ -99,27 +99,37 @@
     let html5QrcodeScanner = null;
     let stamps = [];
 
-    // Safely parse raw QR text, full URLs, parameter strings, or simple numbers
+    // Strictly extract the booth parameter value, ignoring BCYF-2026 or hostnames
     function standardizeBoothId(input) {
       if (!input) return null;
-      let rawVal = String(input).trim().replace(/^["']|["']$/g, '');
+      let str = String(input).trim();
 
-      try {
-        rawVal = decodeURIComponent(rawVal);
-      } catch (e) {}
+      let targetVal = str;
 
-      if (rawVal.includes("booth=")) {
-        const matchParam = rawVal.match(/booth=([^&/#\s]+)/i);
-        if (matchParam) rawVal = matchParam[1].trim();
+      // Check if it is a URL or query string
+      if (str.includes("booth=") || str.includes("?")) {
+        try {
+          // Add dummy origin if relative string passed
+          const dummyUrl = str.startsWith("http") ? str : `https://dummy.com/${str.startsWith("?") ? str : "?" + str}`;
+          const parsed = new URL(dummyUrl);
+          const param = parsed.searchParams.get("booth");
+          if (param) targetVal = param;
+        } catch (e) {
+          // Fallback regex specifically for booth=
+          const match = str.match(/booth=([^&/#\s]+)/i);
+          if (match) targetVal = match[1];
+        }
       }
 
-      const match = rawVal.match(/(?:b|booth)?\s*[-_:]?\s*(\d+)/i);
-      if (match) {
-        const num = parseInt(match[1], 10);
+      // Extract trailing or standalone digits from targetVal only (NOT the full URL)
+      const digitMatch = targetVal.match(/(\d+)/);
+      if (digitMatch) {
+        const num = parseInt(digitMatch[1], 10);
         if (num >= 1 && num <= TOTAL) {
           return `B${String(num).padStart(2, '0')}`;
         }
       }
+
       return null;
     }
 
@@ -136,7 +146,7 @@
       }
 
       if (stamps.includes(formatted)) {
-        alert(`You have already scanned ${formatted}!`);
+        alert(`You have already collected ${formatted}!`);
       } else {
         stamps.push(formatted);
         localStorage.setItem("passport_stamps", JSON.stringify(stamps));
@@ -175,7 +185,6 @@
           stepEl.className = "flex items-center gap-3";
 
           if (isUnlocked) {
-            // Unlocked Step (Green ✓)
             stepEl.innerHTML = `
               <div class="flex flex-col items-center">
                 <div class="w-9 h-9 rounded-full bg-gradient-to-b from-emerald-400 to-teal-500 text-white flex items-center justify-center font-black text-xs shadow-md shadow-emerald-200 border-2 border-white transform scale-110">
@@ -185,7 +194,6 @@
               </div>
             `;
           } else if (isNextTarget) {
-            // Next required booth target (Blue Pulsing)
             stepEl.innerHTML = `
               <div class="flex flex-col items-center">
                 <div class="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center font-black text-xs shadow-md shadow-blue-300 border-2 border-blue-200 animate-bounce">
@@ -195,7 +203,6 @@
               </div>
             `;
           } else {
-            // Locked Step (Gray)
             stepEl.innerHTML = `
               <div class="flex flex-col items-center opacity-40">
                 <div class="w-8 h-8 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center font-bold text-xs border border-gray-300">
@@ -206,7 +213,6 @@
             `;
           }
 
-          // Connecting line between path steps
           if (step < TOTAL) {
             const line = document.createElement("div");
             line.className = `h-1 w-6 rounded-full ${isUnlocked ? 'bg-emerald-400' : 'bg-gray-200'}`;
@@ -265,11 +271,14 @@
 
       stamps = getSavedStamps();
 
+      // Check current window URL for direct QR scan arrival
       const urlParams = new URLSearchParams(window.location.search);
       const scannedBooth = urlParams.get('booth');
       if (scannedBooth) {
         addStamp(scannedBooth);
-        window.history.replaceState({}, document.title, window.location.pathname);
+        // Clean URL parameter without page refresh
+        const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+        window.history.replaceState({ path: cleanUrl }, '', cleanUrl);
       } else {
         render();
       }
@@ -288,12 +297,9 @@
 
       const config = {
         fps: 15,
-        qrbox: (viewfinderWidth, viewfinderHeight) => {
-          const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-          return {
-            width: Math.floor(minEdge * 0.75),
-            height: Math.floor(minEdge * 0.75)
-          };
+        qrbox: (w, h) => {
+          const minEdge = Math.min(w, h);
+          return { width: Math.floor(minEdge * 0.75), height: Math.floor(minEdge * 0.75) };
         },
         aspectRatio: 1.0
       };
@@ -304,7 +310,7 @@
 
     function closeScanner() {
       if (html5QrcodeScanner) {
-        html5QrcodeScanner.clear().catch(error => console.error(error));
+        html5QrcodeScanner.clear().catch(e => {});
       }
       const modal = document.getElementById("scanner-modal");
       if (modal) {
@@ -319,7 +325,7 @@
     }
 
     function onScanFailure(error) {
-      // Suppress frame-by-frame scanner exceptions
+      // Quiet fail while searching
     }
 
     function resetPassport() {
