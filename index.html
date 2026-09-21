@@ -1,26 +1,444 @@
-/**
- * Hardcoded exact match for BCYF-2026 booth links.
- * Checks specifically for booth=B01..B20 or raw B01..B20 strings.
- */
-function standardizeBoothId(input) {
-  if (!input) return null;
-  const raw = String(input).trim().toUpperCase();
-
-  for (let i = 1; i <= TOTAL; i++) {
-    const paddedNum = String(i).padStart(2, '0'); // "01", "02", ..., "20"
-    
-    // Check if the scanned link or text explicitly contains any of your exact booth patterns
-    if (
-      raw.includes(`BOOTH=B${paddedNum}`) ||  // e.g. ?booth=B06
-      raw.includes(`BOOTH=${paddedNum}`)  ||  // e.g. ?booth=06
-      raw.includes(`BOOTH=${i}`)          ||  // e.g. ?booth=6
-      raw === `B${paddedNum}`             ||  // e.g. raw text "B06"
-      raw === `${i}`                          // e.g. raw text "6"
-    ) {
-      return `B${paddedNum}`;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Digital Event Passport</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- HTML5 QR Code Scanner Library -->
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <style>
+    body {
+      background-image: url('./Background.png');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
     }
-  }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+<body class="min-h-screen p-4 flex flex-col items-center justify-center">
 
-  // If the scanned link doesn't contain a valid booth parameter (e.g. just opening the home page), return null
-  return null;
-}
+  <!-- Floating Toast Notification -->
+  <div id="toast-container" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-full max-w-sm px-4 pointer-events-none transition-all duration-300 opacity-0 transform -translate-y-4">
+    <div id="toast-body" class="bg-blue-950 text-white text-xs font-semibold p-3.5 rounded-2xl shadow-2xl border border-blue-800/50 flex flex-col gap-1 pointer-events-auto">
+      <div id="toast-title" class="font-bold text-sm flex items-center gap-1.5"></div>
+      <div id="toast-message" class="text-blue-200 text-[11px] leading-tight break-all"></div>
+    </div>
+  </div>
+
+  <!-- Main Passport Card -->
+  <div class="max-w-md w-full bg-white rounded-3xl shadow-2xl p-6 space-y-5 border border-gray-100 relative overflow-hidden my-4">
+
+    <!-- Event Banner / Header -->
+    <div class="flex flex-col items-center justify-center text-center space-y-2 pt-1">
+      <img 
+        src="./BCYF 2026 Email Banner (1).png" 
+        alt="BCYF 2026 Event Banner" 
+        class="w-full max-h-32 object-contain rounded-2xl shadow-sm mb-1"
+        onerror="this.style.display='none'"
+      >
+      <h1 class="text-2xl font-black text-blue-950 tracking-tight">
+        Digital Passport
+      </h1>
+      
+      <div class="flex items-center gap-2 flex-wrap justify-center">
+        <span id="user-display" class="text-xs font-bold text-blue-900 bg-blue-50 border border-blue-100 py-1 px-3 rounded-full shadow-sm">
+          User: Guest
+        </span>
+        <span id="last-scanned-badge" class="hidden text-xs font-black text-emerald-800 bg-emerald-100 border border-emerald-200 py-1 px-3 rounded-full shadow-sm">
+          Last Scanned: None
+        </span>
+      </div>
+    </div>
+    
+    <!-- Quest Path Progress Section -->
+    <div class="space-y-3 bg-slate-50 p-4 rounded-3xl border border-slate-100">
+      <div class="flex justify-between items-center text-xs font-bold text-blue-900 uppercase tracking-wider">
+        <span>Quest Path</span>
+        <span id="progress-text" class="text-blue-950 font-extrabold bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full">0 / 20</span>
+      </div>
+      
+      <!-- Horizontal Scrollable Node Path -->
+      <div id="duo-path-container" class="relative py-2 overflow-x-auto no-scrollbar scroll-smooth">
+        <div id="duo-path" class="flex items-center gap-3 min-w-max px-2">
+          <!-- Dynamic nodes generated here -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Camera Scan Button -->
+    <button onclick="openScanner()" class="w-full py-3.5 bg-blue-900 hover:bg-blue-950 text-white font-bold rounded-2xl shadow-lg shadow-blue-900/20 flex items-center justify-center gap-2 active:scale-95 transition-all">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path></svg>
+      Scan Booth QR Code
+    </button>
+
+    <!-- Sticker Album Collection Grid -->
+    <div>
+      <div class="flex items-center justify-between mb-2 px-1">
+        <p class="text-xs font-bold text-blue-900 uppercase tracking-wider">Passport Collection</p>
+        <span class="text-[10px] text-gray-500 font-medium">Scan any booth to collect</span>
+      </div>
+      
+      <div id="album-container" class="bg-slate-50 p-3.5 rounded-3xl border border-slate-100">
+        <!-- 4 Column Sticker Grid -->
+        <div id="sticker-grid" class="grid grid-cols-4 gap-2.5"></div>
+      </div>
+    </div>
+
+    <!-- Sponsors Section -->
+    <div class="border-t border-gray-100 pt-4 text-center space-y-2">
+      <p class="text-[10px] font-bold text-blue-900 uppercase tracking-widest">Organized & Sponsored By</p>
+      <div class="flex items-center justify-center gap-3 flex-wrap opacity-75">
+        <img src="https://via.placeholder.com/80x30?text=Sponsor+1" alt="Sponsor 1" class="h-7 object-contain">
+        <img src="https://via.placeholder.com/80x30?text=Sponsor+2" alt="Sponsor 2" class="h-7 object-contain">
+        <img src="https://via.placeholder.com/80x30?text=Partner+1" alt="Partner 1" class="h-7 object-contain">
+      </div>
+    </div>
+
+    <!-- Reset Option -->
+    <div class="text-center pt-1">
+      <button onclick="resetPassport()" class="text-[11px] text-gray-400 hover:text-red-500 underline transition-colors">
+        Reset Passport & Clear Saved Data
+      </button>
+    </div>
+
+  </div>
+
+  <!-- Camera Scanner Modal -->
+  <div id="scanner-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex-col items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-3xl p-5 w-full max-w-sm text-center space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between">
+        <h3 class="text-base font-bold text-blue-950">Scan Booth QR Code</h3>
+        <button onclick="closeScanner()" class="text-gray-400 hover:text-gray-600 font-bold text-lg px-2">&times;</button>
+      </div>
+      <div id="reader" class="w-full overflow-hidden rounded-2xl border-2 border-slate-100 bg-slate-900 min-h-[250px]"></div>
+      <button onclick="closeScanner()" class="w-full py-3 bg-slate-100 text-slate-700 font-bold rounded-xl hover:bg-slate-200 text-xs">
+        Cancel Scan
+      </button>
+    </div>
+  </div>
+
+  <script>
+    const TOTAL = 20;
+    let html5QrcodeScanner = null;
+    let stamps = [];
+    let lastScannedBooth = null;
+
+    /**
+     * Exact matching for BCYF-2026 booth parameters.
+     * Iterates explicitly through B01..B20 to eliminate domain name collisions (like code-exp7 or 2026).
+     */
+    function standardizeBoothId(input) {
+      if (!input) return null;
+      const raw = String(input).trim().toUpperCase();
+
+      for (let i = 1; i <= TOTAL; i++) {
+        const paddedNum = String(i).padStart(2, '0'); // "01", "02", ..., "20"
+        
+        // Exact checks against known booth parameter patterns
+        if (
+          raw.includes(`BOOTH=B${paddedNum}`) ||  // e.g. ?booth=B06
+          raw.includes(`BOOTH=${paddedNum}`)  ||  // e.g. ?booth=06
+          raw.includes(`BOOTH=${i}&`)         ||  // e.g. ?booth=6&...
+          raw.endsWith(`BOOTH=${i}`)          ||  // e.g. ?booth=6
+          raw === `B${paddedNum}`             ||  // e.g. raw text B06
+          raw === `BOOTH${paddedNum}`         ||  // e.g. raw text BOOTH06
+          raw === `${i}`                          // e.g. raw text 6
+        ) {
+          return `B${paddedNum}`;
+        }
+      }
+
+      // Return null if no valid booth key exists in input
+      return null;
+    }
+
+    function showToast(title, message, isSuccess = true) {
+      const container = document.getElementById("toast-container");
+      const titleEl = document.getElementById("toast-title");
+      const messageEl = document.getElementById("toast-message");
+      const bodyEl = document.getElementById("toast-body");
+
+      if (!container || !titleEl || !messageEl || !bodyEl) return;
+
+      titleEl.innerHTML = isSuccess ? `🎉 ${title}` : `⚠️ ${title}`;
+      messageEl.innerText = message;
+
+      bodyEl.className = isSuccess 
+        ? "bg-emerald-950 text-white text-xs font-semibold p-3.5 rounded-2xl shadow-2xl border border-emerald-800/60 flex flex-col gap-1 pointer-events-auto"
+        : "bg-amber-950 text-white text-xs font-semibold p-3.5 rounded-2xl shadow-2xl border border-amber-800/60 flex flex-col gap-1 pointer-events-auto";
+
+      container.classList.remove("opacity-0", "-translate-y-4", "pointer-events-none");
+      container.classList.add("opacity-100", "translate-y-0");
+
+      setTimeout(() => {
+        container.classList.remove("opacity-100", "translate-y-0");
+        container.classList.add("opacity-0", "-translate-y-4", "pointer-events-none");
+      }, 4000);
+    }
+
+    function getSavedStamps() {
+      try {
+        const raw = JSON.parse(localStorage.getItem("passport_stamps") || "[]");
+        const cleaned = raw.map(s => standardizeBoothId(s)).filter(Boolean);
+        return [...new Set(cleaned)];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function addStamp(rawInput, source = "scanner") {
+      const formatted = standardizeBoothId(rawInput);
+
+      if (!formatted) {
+        showToast(
+          "Invalid QR Code", 
+          `Could not detect a valid booth (B01-B20).\nScanned content: "${rawInput}"`, 
+          false
+        );
+        return;
+      }
+
+      lastScannedBooth = formatted;
+
+      if (stamps.includes(formatted)) {
+        showToast(
+          `Already Collected!`, 
+          `You have already unlocked ${formatted}.`, 
+          false
+        );
+      } else {
+        stamps.push(formatted);
+        localStorage.setItem("passport_stamps", JSON.stringify(stamps));
+        showToast(
+          `Unlocked ${formatted}!`, 
+          `Successfully registered stamp for ${formatted}.`, 
+          true
+        );
+      }
+
+      render(formatted);
+    }
+
+    function render(highlightBoothId = null) {
+      stamps = getSavedStamps();
+      const count = stamps.length;
+
+      // Progress label
+      const progressText = document.getElementById("progress-text");
+      if (progressText) progressText.innerText = `${count} / ${TOTAL} Stamps`;
+
+      // Last scanned badge
+      const lastBadge = document.getElementById("last-scanned-badge");
+      if (lastBadge) {
+        if (lastScannedBooth) {
+          lastBadge.innerText = `Last Scanned: ${lastScannedBooth}`;
+          lastBadge.classList.remove("hidden");
+        } else {
+          lastBadge.classList.add("hidden");
+        }
+      }
+
+      // Lowest uncollected booth number for "NEXT" target indicator
+      let nextTargetNum = TOTAL + 1;
+      for (let i = 1; i <= TOTAL; i++) {
+        const bId = `B${String(i).padStart(2, '0')}`;
+        if (!stamps.includes(bId)) {
+          nextTargetNum = i;
+          break;
+        }
+      }
+
+      // 1. Render Quest Path Nodes
+      const duoPath = document.getElementById("duo-path");
+      if (duoPath) {
+        duoPath.innerHTML = "";
+        for (let step = 1; step <= TOTAL; step++) {
+          const stepBoothId = `B${String(step).padStart(2, '0')}`;
+          const isUnlocked = stamps.includes(stepBoothId);
+          const isNextTarget = !isUnlocked && step === nextTargetNum;
+          const isJustScanned = stepBoothId === highlightBoothId;
+
+          const stepEl = document.createElement("div");
+          stepEl.id = `node-${stepBoothId}`;
+          stepEl.className = "flex items-center gap-3";
+
+          if (isUnlocked) {
+            stepEl.innerHTML = `
+              <div class="flex flex-col items-center">
+                <div class="w-9 h-9 rounded-full bg-gradient-to-b from-emerald-400 to-teal-500 text-white flex items-center justify-center font-black text-xs shadow-md shadow-emerald-200 border-2 border-white transform ${isJustScanned ? 'scale-125 ring-4 ring-emerald-300' : 'scale-100'} transition-all">
+                  ✓
+                </div>
+                <span class="text-[9px] font-black text-emerald-600 mt-1">${stepBoothId}</span>
+              </div>
+            `;
+          } else if (isNextTarget) {
+            stepEl.innerHTML = `
+              <div class="flex flex-col items-center">
+                <div class="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center font-black text-xs shadow-md shadow-blue-300 border-2 border-blue-200 animate-bounce">
+                  ${step}
+                </div>
+                <span class="text-[9px] font-black text-blue-600 mt-1">NEXT</span>
+              </div>
+            `;
+          } else {
+            stepEl.innerHTML = `
+              <div class="flex flex-col items-center opacity-40">
+                <div class="w-8 h-8 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center font-bold text-xs border border-slate-300">
+                  ${step}
+                </div>
+                <span class="text-[9px] font-semibold text-slate-400 mt-1">${stepBoothId}</span>
+              </div>
+            `;
+          }
+
+          if (step < TOTAL) {
+            const line = document.createElement("div");
+            line.className = `h-1 w-5 rounded-full ${isUnlocked ? 'bg-emerald-400' : 'bg-slate-200'}`;
+            stepEl.appendChild(line);
+          }
+
+          duoPath.appendChild(stepEl);
+        }
+      }
+
+      // 2. Render Passport Collection Album Grid
+      const grid = document.getElementById("sticker-grid");
+      if (grid) {
+        grid.innerHTML = "";
+        for (let i = 1; i <= TOTAL; i++) {
+          const boothId = `B${String(i).padStart(2, '0')}`;
+          const isStamped = stamps.includes(boothId);
+          const isJustScanned = boothId === highlightBoothId;
+
+          const slot = document.createElement("div");
+          slot.id = `grid-${boothId}`;
+          slot.className = "flex flex-col items-center justify-center";
+
+          if (isStamped) {
+            slot.innerHTML = `
+              <div class="w-full aspect-square rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-500 text-white flex flex-col items-center justify-center shadow-md shadow-emerald-100 border border-emerald-300 transform ${isJustScanned ? 'ring-4 ring-emerald-400 scale-105' : ''} transition-all">
+                <span class="text-[8px] font-extrabold uppercase tracking-widest text-emerald-100">STAMPED</span>
+                <span class="text-xs font-black tracking-tight">${boothId}</span>
+              </div>
+            `;
+          } else {
+            slot.innerHTML = `
+              <div class="w-full aspect-square rounded-2xl bg-white text-slate-300 flex flex-col items-center justify-center border-2 border-dashed border-slate-200 shadow-sm">
+                <span class="text-[8px] font-bold uppercase tracking-wider text-slate-400">BOOTH</span>
+                <span class="text-xs font-black text-slate-400">${boothId}</span>
+              </div>
+            `;
+          }
+
+          grid.appendChild(slot);
+        }
+      }
+
+      // Auto-scroll Quest Path node container to focused booth
+      const targetFocusId = highlightBoothId || `B${String(nextTargetNum <= TOTAL ? nextTargetNum : 1).padStart(2, '0')}`;
+      setTimeout(() => {
+        const targetNode = document.getElementById(`node-${targetFocusId}`);
+        const container = document.getElementById("duo-path-container");
+        if (targetNode && container) {
+          const scrollLeft = targetNode.offsetLeft - (container.clientWidth / 2) + (targetNode.clientWidth / 2);
+          container.scrollTo({ left: scrollLeft, behavior: 'smooth' });
+        }
+      }, 100);
+    }
+
+    function initPassport() {
+      let username = localStorage.getItem("passport_username");
+      if (!username) {
+        username = prompt("Welcome! Please enter your Username to start your passport:");
+        if (username && username.trim() !== "") {
+          username = username.trim();
+          localStorage.setItem("passport_username", username);
+        }
+      }
+      const userDisplay = document.getElementById("user-display");
+      if (userDisplay) {
+        userDisplay.innerText = username ? `User: ${username}` : "User: Guest";
+      }
+
+      // Check current page URL for direct QR code arrival
+      const fullUrl = window.location.href;
+      const urlBooth = standardizeBoothId(fullUrl);
+
+      if (urlBooth) {
+        addStamp(fullUrl, "url");
+        // Remove query parameters from address bar smoothly
+        try {
+          const cleanUrl = window.location.origin + window.location.pathname;
+          window.history.replaceState({}, document.title, cleanUrl);
+        } catch (e) {}
+      } else {
+        render();
+      }
+    }
+
+    function openScanner() {
+      const modal = document.getElementById("scanner-modal");
+      if (modal) {
+        modal.classList.remove("hidden");
+        modal.classList.add("flex");
+      }
+
+      if (html5QrcodeScanner) {
+        html5QrcodeScanner.clear().catch(() => {});
+      }
+
+      const config = {
+        fps: 15,
+        qrbox: (w, h) => {
+          const minEdge = Math.min(w, h);
+          return { width: Math.floor(minEdge * 0.75), height: Math.floor(minEdge * 0.75) };
+        },
+        aspectRatio: 1.0
+      };
+
+      html5QrcodeScanner = new Html5QrcodeScanner("reader", config, false);
+      html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+    }
+
+    function closeScanner() {
+      if (html5QrcodeScanner) {
+        html5QrcodeScanner.clear().catch(() => {});
+      }
+      const modal = document.getElementById("scanner-modal");
+      if (modal) {
+        modal.classList.add("hidden");
+        modal.classList.remove("flex");
+      }
+    }
+
+    function onScanSuccess(decodedText) {
+      closeScanner();
+      addStamp(decodedText, "camera");
+    }
+
+    function onScanFailure(error) {
+      // Searching...
+    }
+
+    function resetPassport() {
+      if (confirm("Are you sure you want to clear all collected stamps and reset your passport data?")) {
+        localStorage.clear();
+        stamps = [];
+        lastScannedBooth = null;
+        location.reload();
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", initPassport);
+  </script>
+</body>
+</html>
