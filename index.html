@@ -15,27 +15,52 @@
       background-repeat: no-repeat;
       background-attachment: fixed;
     }
+    /* Hide scrollbars for clean UI */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
   </style>
 </head>
 <body class="min-h-screen p-4 flex flex-col items-center justify-center">
 
-  <!-- Main Passport White Card -->
-  <div class="max-w-md w-full bg-white rounded-3xl shadow-2xl p-6 space-y-6 border border-gray-100 relative overflow-hidden my-6">
+  <!-- Floating Toast Notification -->
+  <div id="toast-container" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-full max-w-sm px-4 pointer-events-none transition-all duration-300 opacity-0 transform -translate-y-4">
+    <div id="toast-body" class="bg-blue-950 text-white text-xs font-semibold p-3.5 rounded-2xl shadow-2xl border border-blue-800/50 flex flex-col gap-1 pointer-events-auto">
+      <div id="toast-title" class="font-bold text-sm flex items-center gap-1.5"></div>
+      <div id="toast-message" class="text-blue-200 text-[11px] leading-tight break-all"></div>
+    </div>
+  </div>
 
-    <!-- Event Banner / Logo Header -->
-    <div class="flex flex-col items-center justify-center text-center space-y-2 pt-2">
+  <!-- Main Passport Card -->
+  <div class="max-w-md w-full bg-white rounded-3xl shadow-2xl p-6 space-y-5 border border-gray-100 relative overflow-hidden my-4">
+
+    <!-- Event Banner / Header -->
+    <div class="flex flex-col items-center justify-center text-center space-y-2 pt-1">
       <img 
         src="./BCYF 2026 Email Banner (1).png" 
         alt="BCYF 2026 Event Banner" 
-        class="w-full max-h-36 object-contain rounded-2xl shadow-sm mb-1"
+        class="w-full max-h-32 object-contain rounded-2xl shadow-sm mb-1"
+        onerror="this.style.display='none'"
       >
       <h1 class="text-2xl font-black text-blue-950 tracking-tight">
         Digital Passport
       </h1>
-      <p id="user-display" class="text-xs font-semibold text-blue-900 bg-blue-50 border border-blue-100 py-1 px-3.5 rounded-full inline-block shadow-sm"></p>
+      
+      <div class="flex items-center gap-2 flex-wrap justify-center">
+        <span id="user-display" class="text-xs font-bold text-blue-900 bg-blue-50 border border-blue-100 py-1 px-3 rounded-full shadow-sm">
+          User: Guest
+        </span>
+        <span id="last-scanned-badge" class="hidden text-xs font-black text-emerald-800 bg-emerald-100 border border-emerald-200 py-1 px-3 rounded-full shadow-sm">
+          Last Scanned: None
+        </span>
+      </div>
     </div>
     
-    <!-- Duolingo-Style Sequential Path Progress Bar -->
+    <!-- Quest Path Progress Section -->
     <div class="space-y-3 bg-slate-50 p-4 rounded-3xl border border-slate-100">
       <div class="flex justify-between items-center text-xs font-bold text-blue-900 uppercase tracking-wider">
         <span>Quest Path</span>
@@ -43,54 +68,62 @@
       </div>
       
       <!-- Horizontal Scrollable Node Path -->
-      <div class="relative py-2 overflow-x-auto no-scrollbar">
+      <div id="duo-path-container" class="relative py-2 overflow-x-auto no-scrollbar scroll-smooth">
         <div id="duo-path" class="flex items-center gap-3 min-w-max px-2">
-          <!-- Dynamic nodes generate here -->
+          <!-- Dynamic nodes generated here -->
         </div>
       </div>
     </div>
 
     <!-- Camera Scan Button -->
     <button onclick="openScanner()" class="w-full py-3.5 bg-blue-900 hover:bg-blue-950 text-white font-bold rounded-2xl shadow-lg shadow-blue-900/20 flex items-center justify-center gap-2 active:scale-95 transition-all">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path></svg>
       Scan Booth QR Code
     </button>
 
     <!-- Sticker Album Collection Grid -->
     <div>
-      <div class="flex items-center justify-between mb-3">
+      <div class="flex items-center justify-between mb-2 px-1">
         <p class="text-xs font-bold text-blue-900 uppercase tracking-wider">Passport Collection</p>
         <span class="text-[10px] text-gray-500 font-medium">Scan any booth to collect</span>
       </div>
       
-      <div id="album-container" class="bg-slate-50 p-4 rounded-3xl border border-slate-100">
-        <!-- 4 Column Sticker Album Grid -->
-        <div id="sticker-grid" class="grid grid-cols-4 gap-3"></div>
+      <div id="album-container" class="bg-slate-50 p-3.5 rounded-3xl border border-slate-100">
+        <!-- 4 Column Sticker Grid -->
+        <div id="sticker-grid" class="grid grid-cols-4 gap-2.5"></div>
       </div>
     </div>
 
-    <!-- Sponsors & Partners Placeholder Section -->
-    <div class="border-t border-gray-100 pt-5 text-center space-y-3">
-      <p class="text-[11px] font-bold text-blue-900 uppercase tracking-widest">Organized & Sponsored By</p>
-      <div class="flex items-center justify-center gap-4 flex-wrap opacity-80">
-        <img src="https://via.placeholder.com/90x35?text=Sponsor+1" alt="Sponsor 1" class="h-8 object-contain">
-        <img src="https://via.placeholder.com/90x35?text=Sponsor+2" alt="Sponsor 2" class="h-8 object-contain">
-        <img src="https://via.placeholder.com/90x35?text=Partner+1" alt="Partner 1" class="h-8 object-contain">
+    <!-- Sponsors Section -->
+    <div class="border-t border-gray-100 pt-4 text-center space-y-2">
+      <p class="text-[10px] font-bold text-blue-900 uppercase tracking-widest">Organized & Sponsored By</p>
+      <div class="flex items-center justify-center gap-3 flex-wrap opacity-75">
+        <img src="https://via.placeholder.com/80x30?text=Sponsor+1" alt="Sponsor 1" class="h-7 object-contain">
+        <img src="https://via.placeholder.com/80x30?text=Sponsor+2" alt="Sponsor 2" class="h-7 object-contain">
+        <img src="https://via.placeholder.com/80x30?text=Partner+1" alt="Partner 1" class="h-7 object-contain">
       </div>
     </div>
 
     <!-- Reset Option -->
     <div class="text-center pt-1">
-      <button onclick="resetPassport()" class="text-[11px] text-gray-400 hover:text-red-500 underline transition-colors">Change Username / Reset Passport</button>
+      <button onclick="resetPassport()" class="text-[11px] text-gray-400 hover:text-red-500 underline transition-colors">
+        Reset Passport & Clear Saved Data
+      </button>
     </div>
 
   </div>
 
   <!-- Camera Scanner Modal -->
   <div id="scanner-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex-col items-center justify-center p-4 z-50">
-    <div class="bg-white rounded-3xl p-6 w-full max-w-sm text-center space-y-4">
-      <h3 class="text-lg font-bold text-blue-950">Scan Booth QR Code</h3>
-      <div id="reader" class="w-full overflow-hidden rounded-2xl border-2 border-gray-200"></div>
-      <button onclick="closeScanner()" class="w-full py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200">Cancel</button>
+    <div class="bg-white rounded-3xl p-5 w-full max-w-sm text-center space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between">
+        <h3 class="text-base font-bold text-blue-950">Scan Booth QR Code</h3>
+        <button onclick="closeScanner()" class="text-gray-400 hover:text-gray-600 font-bold text-lg px-2">&times;</button>
+      </div>
+      <div id="reader" class="w-full overflow-hidden rounded-2xl border-2 border-slate-100 bg-slate-900 min-h-[250px]"></div>
+      <button onclick="closeScanner()" class="w-full py-3 bg-slate-100 text-slate-700 font-bold rounded-xl hover:bg-slate-200 text-xs">
+        Cancel Scan
+      </button>
     </div>
   </div>
 
@@ -98,33 +131,45 @@
     const TOTAL = 20;
     let html5QrcodeScanner = null;
     let stamps = [];
+    let lastScannedBooth = null;
 
-    // Strictly extract the booth parameter value, ignoring BCYF-2026 or hostnames
+    /**
+     * Strictly extracts booth numbers (B01..B20) from any raw input or URL string.
+     * Guarantees that domain names like "BCYF-2026" are ignored completely.
+     */
     function standardizeBoothId(input) {
       if (!input) return null;
-      let str = String(input).trim();
+      const raw = String(input).trim();
+      if (!raw) return null;
 
-      let targetVal = str;
+      let candidate = raw;
 
-      // Check if it is a URL or query string
-      if (str.includes("booth=") || str.includes("?")) {
-        try {
-          // Add dummy origin if relative string passed
-          const dummyUrl = str.startsWith("http") ? str : `https://dummy.com/${str.startsWith("?") ? str : "?" + str}`;
-          const parsed = new URL(dummyUrl);
-          const param = parsed.searchParams.get("booth");
-          if (param) targetVal = param;
-        } catch (e) {
-          // Fallback regex specifically for booth=
-          const match = str.match(/booth=([^&/#\s]+)/i);
-          if (match) targetVal = match[1];
+      // 1. If input contains "booth=", isolate what comes right after it
+      if (/booth=/i.test(raw)) {
+        const parts = raw.split(/booth=/i);
+        if (parts.length > 1) {
+          // Take string immediately following booth= up to standard URL delimiters
+          candidate = parts[parts.length - 1].split(/[&?#/\s]/)[0];
         }
+      } 
+      // 2. Otherwise if it's a URL, search URL parameters for 'booth', 'b', or 'id'
+      else if (raw.startsWith("http://") || raw.startsWith("https://") || raw.includes("?")) {
+        try {
+          const dummy = raw.startsWith("http") ? raw : "https://dummy.com/" + raw.replace(/^\/*/, '');
+          const parsed = new URL(dummy);
+          for (const [key, val] of parsed.searchParams.entries()) {
+            if (/^(booth|b|id)$/i.test(key)) {
+              candidate = val;
+              break;
+            }
+          }
+        } catch (e) {}
       }
 
-      // Extract trailing or standalone digits from targetVal only (NOT the full URL)
-      const digitMatch = targetVal.match(/(\d+)/);
-      if (digitMatch) {
-        const num = parseInt(digitMatch[1], 10);
+      // 3. Extract trailing or standalone digits from the isolated candidate string ONLY
+      const match = candidate.match(/(\d+)/);
+      if (match) {
+        const num = parseInt(match[1], 10);
         if (num >= 1 && num <= TOTAL) {
           return `B${String(num).padStart(2, '0')}`;
         }
@@ -133,64 +178,123 @@
       return null;
     }
 
-    function getSavedStamps() {
-      const raw = JSON.parse(localStorage.getItem("passport_stamps") || "[]");
-      return raw.map(s => standardizeBoothId(s)).filter(Boolean);
+    function showToast(title, message, isSuccess = true) {
+      const container = document.getElementById("toast-container");
+      const titleEl = document.getElementById("toast-title");
+      const messageEl = document.getElementById("toast-message");
+      const bodyEl = document.getElementById("toast-body");
+
+      if (!container || !titleEl || !messageEl || !bodyEl) return;
+
+      titleEl.innerHTML = isSuccess ? `🎉 ${title}` : `⚠️ ${title}`;
+      messageEl.innerText = message;
+
+      bodyEl.className = isSuccess 
+        ? "bg-emerald-950 text-white text-xs font-semibold p-3.5 rounded-2xl shadow-2xl border border-emerald-800/60 flex flex-col gap-1 pointer-events-auto"
+        : "bg-amber-950 text-white text-xs font-semibold p-3.5 rounded-2xl shadow-2xl border border-amber-800/60 flex flex-col gap-1 pointer-events-auto";
+
+      container.classList.remove("opacity-0", "-translate-y-4", "pointer-events-none");
+      container.classList.add("opacity-100", "translate-y-0");
+
+      setTimeout(() => {
+        container.classList.remove("opacity-100", "translate-y-0");
+        container.classList.add("opacity-0", "-translate-y-4", "pointer-events-none");
+      }, 4000);
     }
 
-    function addStamp(boothId) {
-      const formatted = standardizeBoothId(boothId);
+    function getSavedStamps() {
+      try {
+        const raw = JSON.parse(localStorage.getItem("passport_stamps") || "[]");
+        const cleaned = raw.map(s => standardizeBoothId(s)).filter(Boolean);
+        return [...new Set(cleaned)]; // Unique stamps only
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function addStamp(rawInput, source = "scanner") {
+      const formatted = standardizeBoothId(rawInput);
+
       if (!formatted) {
-        alert(`Invalid QR Code scanned!\nRaw content: "${boothId}"`);
+        showToast(
+          "Invalid QR Code", 
+          `Could not detect a valid booth (B01-B20).\nScanned content: "${rawInput}"`, 
+          false
+        );
         return;
       }
 
+      lastScannedBooth = formatted;
+
       if (stamps.includes(formatted)) {
-        alert(`You have already collected ${formatted}!`);
+        showToast(
+          `Already Collected!`, 
+          `You have already unlocked ${formatted}.\nRaw input: "${rawInput}"`, 
+          false
+        );
       } else {
         stamps.push(formatted);
         localStorage.setItem("passport_stamps", JSON.stringify(stamps));
-        alert(`Stamp Unlocked for ${formatted}!`);
+        showToast(
+          `Unlocked ${formatted}!`, 
+          `Successfully registered stamp for ${formatted}.\nRaw input: "${rawInput}"`, 
+          true
+        );
       }
-      render();
+
+      render(formatted);
     }
 
-    function render() {
+    function render(highlightBoothId = null) {
       stamps = getSavedStamps();
       const count = stamps.length;
 
+      // Update progress label
       const progressText = document.getElementById("progress-text");
       if (progressText) progressText.innerText = `${count} / ${TOTAL} Stamps`;
 
-      // Find the lowest numbered booth that hasn't been scanned yet to mark as NEXT
-      let nextRequiredBoothNum = TOTAL + 1;
+      // Update last scanned badge
+      const lastBadge = document.getElementById("last-scanned-badge");
+      if (lastBadge) {
+        if (lastScannedBooth) {
+          lastBadge.innerText = `Last Scanned: ${lastScannedBooth}`;
+          lastBadge.classList.remove("hidden");
+        } else {
+          lastBadge.classList.add("hidden");
+        }
+      }
+
+      // Find lowest missing booth number for "NEXT" target indicator
+      let nextTargetNum = TOTAL + 1;
       for (let i = 1; i <= TOTAL; i++) {
         const bId = `B${String(i).padStart(2, '0')}`;
         if (!stamps.includes(bId)) {
-          nextRequiredBoothNum = i;
+          nextTargetNum = i;
           break;
         }
       }
 
-      // 1. Render Path linked directly to Booth 1 -> Booth 20
+      // 1. Render Quest Path
       const duoPath = document.getElementById("duo-path");
       if (duoPath) {
         duoPath.innerHTML = "";
         for (let step = 1; step <= TOTAL; step++) {
           const stepBoothId = `B${String(step).padStart(2, '0')}`;
           const isUnlocked = stamps.includes(stepBoothId);
-          const isNextTarget = !isUnlocked && step === nextRequiredBoothNum;
+          const isNextTarget = !isUnlocked && step === nextTargetNum;
+          const isJustScanned = stepBoothId === highlightBoothId;
 
           const stepEl = document.createElement("div");
+          stepEl.id = `node-${stepBoothId}`;
           stepEl.className = "flex items-center gap-3";
 
           if (isUnlocked) {
             stepEl.innerHTML = `
               <div class="flex flex-col items-center">
-                <div class="w-9 h-9 rounded-full bg-gradient-to-b from-emerald-400 to-teal-500 text-white flex items-center justify-center font-black text-xs shadow-md shadow-emerald-200 border-2 border-white transform scale-110">
+                <div class="w-9 h-9 rounded-full bg-gradient-to-b from-emerald-400 to-teal-500 text-white flex items-center justify-center font-black text-xs shadow-md shadow-emerald-200 border-2 border-white transform ${isJustScanned ? 'scale-125 ring-4 ring-emerald-300' : 'scale-100'} transition-all">
                   ✓
                 </div>
-                <span class="text-[9px] font-extrabold text-emerald-600 mt-1">${stepBoothId}</span>
+                <span class="text-[9px] font-black text-emerald-600 mt-1">${stepBoothId}</span>
               </div>
             `;
           } else if (isNextTarget) {
@@ -199,23 +303,23 @@
                 <div class="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center font-black text-xs shadow-md shadow-blue-300 border-2 border-blue-200 animate-bounce">
                   ${step}
                 </div>
-                <span class="text-[9px] font-bold text-blue-600 mt-1">NEXT</span>
+                <span class="text-[9px] font-black text-blue-600 mt-1">NEXT</span>
               </div>
             `;
           } else {
             stepEl.innerHTML = `
               <div class="flex flex-col items-center opacity-40">
-                <div class="w-8 h-8 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center font-bold text-xs border border-gray-300">
+                <div class="w-8 h-8 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center font-bold text-xs border border-slate-300">
                   ${step}
                 </div>
-                <span class="text-[9px] font-semibold text-gray-400 mt-1">B${String(step).padStart(2, '0')}</span>
+                <span class="text-[9px] font-semibold text-slate-400 mt-1">${stepBoothId}</span>
               </div>
             `;
           }
 
           if (step < TOTAL) {
             const line = document.createElement("div");
-            line.className = `h-1 w-6 rounded-full ${isUnlocked ? 'bg-emerald-400' : 'bg-gray-200'}`;
+            line.className = `h-1 w-5 rounded-full ${isUnlocked ? 'bg-emerald-400' : 'bg-slate-200'}`;
             stepEl.appendChild(line);
           }
 
@@ -225,37 +329,51 @@
 
       // 2. Render Passport Collection Album Grid
       const grid = document.getElementById("sticker-grid");
-      if (!grid) return;
-      grid.innerHTML = "";
+      if (grid) {
+        grid.innerHTML = "";
+        for (let i = 1; i <= TOTAL; i++) {
+          const boothId = `B${String(i).padStart(2, '0')}`;
+          const isStamped = stamps.includes(boothId);
+          const isJustScanned = boothId === highlightBoothId;
 
-      for (let i = 1; i <= TOTAL; i++) {
-        const boothId = `B${String(i).padStart(2, '0')}`;
-        const isStamped = stamps.includes(boothId);
+          const slot = document.createElement("div");
+          slot.id = `grid-${boothId}`;
+          slot.className = "flex flex-col items-center justify-center";
 
-        const slot = document.createElement("div");
-        slot.className = "flex flex-col items-center justify-center";
+          if (isStamped) {
+            slot.innerHTML = `
+              <div class="w-full aspect-square rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-500 text-white flex flex-col items-center justify-center shadow-md shadow-emerald-100 border border-emerald-300 transform ${isJustScanned ? 'ring-4 ring-emerald-400 scale-105' : ''} transition-all">
+                <span class="text-[8px] font-extrabold uppercase tracking-widest text-emerald-100">STAMPED</span>
+                <span class="text-xs font-black tracking-tight">${boothId}</span>
+              </div>
+            `;
+          } else {
+            slot.innerHTML = `
+              <div class="w-full aspect-square rounded-2xl bg-white text-slate-300 flex flex-col items-center justify-center border-2 border-dashed border-slate-200 shadow-sm">
+                <span class="text-[8px] font-bold uppercase tracking-wider text-slate-400">BOOTH</span>
+                <span class="text-xs font-black text-slate-400">${boothId}</span>
+              </div>
+            `;
+          }
 
-        if (isStamped) {
-          slot.innerHTML = `
-            <div class="w-full aspect-square rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-500 text-white flex flex-col items-center justify-center shadow-md shadow-emerald-100 border border-emerald-300 transform scale-105 transition-all">
-              <span class="text-[9px] font-extrabold uppercase tracking-widest text-emerald-100">STAMPED</span>
-              <span class="text-sm font-black tracking-tight">${boothId}</span>
-            </div>
-          `;
-        } else {
-          slot.innerHTML = `
-            <div class="w-full aspect-square rounded-2xl bg-white text-gray-300 flex flex-col items-center justify-center border-2 border-dashed border-gray-200 shadow-sm transition-all">
-              <span class="text-[9px] font-bold uppercase tracking-wider text-gray-400">BOOTH</span>
-              <span class="text-xs font-black text-gray-400">${boothId}</span>
-            </div>
-          `;
+          grid.appendChild(slot);
         }
-
-        grid.appendChild(slot);
       }
+
+      // Auto-scroll the path container to focus on the target or scanned booth
+      const targetFocusId = highlightBoothId || `B${String(nextTargetNum <= TOTAL ? nextTargetNum : 1).padStart(2, '0')}`;
+      setTimeout(() => {
+        const targetNode = document.getElementById(`node-${targetFocusId}`);
+        const container = document.getElementById("duo-path-container");
+        if (targetNode && container) {
+          const scrollLeft = targetNode.offsetLeft - (container.clientWidth / 2) + (targetNode.clientWidth / 2);
+          container.scrollTo({ left: scrollLeft, behavior: 'smooth' });
+        }
+      }, 100);
     }
 
     function initPassport() {
+      // 1. User setup
       let username = localStorage.getItem("passport_username");
       if (!username) {
         username = prompt("Welcome! Please enter your Username to start your passport:");
@@ -266,19 +384,20 @@
       }
       const userDisplay = document.getElementById("user-display");
       if (userDisplay) {
-        userDisplay.innerText = username ? `User: ${username}` : "Not logged in";
+        userDisplay.innerText = username ? `User: ${username}` : "User: Guest";
       }
 
-      stamps = getSavedStamps();
+      // 2. Parse current address bar URL for direct QR scan arrival
+      const fullUrl = window.location.href;
+      const urlBooth = standardizeBoothId(fullUrl);
 
-      // Check current window URL for direct QR scan arrival
-      const urlParams = new URLSearchParams(window.location.search);
-      const scannedBooth = urlParams.get('booth');
-      if (scannedBooth) {
-        addStamp(scannedBooth);
-        // Clean URL parameter without page refresh
-        const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
-        window.history.replaceState({ path: cleanUrl }, '', cleanUrl);
+      if (urlBooth) {
+        addStamp(fullUrl, "url");
+        // Clean URL parameter without reloading page
+        try {
+          const cleanUrl = window.location.origin + window.location.pathname;
+          window.history.replaceState({}, document.title, cleanUrl);
+        } catch (e) {}
       } else {
         render();
       }
@@ -310,7 +429,7 @@
 
     function closeScanner() {
       if (html5QrcodeScanner) {
-        html5QrcodeScanner.clear().catch(e => {});
+        html5QrcodeScanner.clear().catch(() => {});
       }
       const modal = document.getElementById("scanner-modal");
       if (modal) {
@@ -321,16 +440,18 @@
 
     function onScanSuccess(decodedText) {
       closeScanner();
-      addStamp(decodedText);
+      addStamp(decodedText, "camera");
     }
 
     function onScanFailure(error) {
-      // Quiet fail while searching
+      // Searching...
     }
 
     function resetPassport() {
-      if (confirm("Reset local stamp history and change username?")) {
+      if (confirm("Are you sure you want to clear all collected stamps and reset your passport data?")) {
         localStorage.clear();
+        stamps = [];
+        lastScannedBooth = null;
         location.reload();
       }
     }
