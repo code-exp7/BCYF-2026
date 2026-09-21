@@ -22,6 +22,58 @@
       -ms-overflow-style: none;
       scrollbar-width: none;
     }
+
+    /* FORCED CONTRAST FIXES FOR HTML5-QRCODE INJECTED ELEMENTS */
+    #reader {
+      background-color: #0f172a !important; /* Dark slate background */
+      border: none !important;
+    }
+    /* Force all text, labels, and spans injected inside scanner to be bright white */
+    #reader *, 
+    #reader span, 
+    #reader div, 
+    #reader p {
+      color: #f8fafc !important;
+    }
+    /* Style injected camera selection dropdowns for Dark & Light mode compatibility */
+    #reader select {
+      background-color: #1e293b !important;
+      color: #ffffff !important;
+      border: 1px solid #334155 !important;
+      border-radius: 0.75rem !important;
+      padding: 0.5rem 0.75rem !important;
+      font-size: 0.85rem !important;
+      margin-bottom: 0.5rem !important;
+      outline: none !important;
+      width: 100% !important;
+      max-width: 280px !important;
+    }
+    #reader select option {
+      background-color: #0f172a !important;
+      color: #ffffff !important;
+    }
+    /* Style injected scanner action buttons (e.g. Stop Scanning / Request Camera Permission) */
+    #reader button {
+      background-color: #1e40af !important;
+      color: #ffffff !important;
+      border-radius: 0.75rem !important;
+      padding: 0.5rem 1rem !important;
+      font-size: 0.75rem !important;
+      font-weight: 700 !important;
+      border: none !important;
+      margin: 0.25rem !important;
+      cursor: pointer !important;
+      transition: background-color 0.2s !important;
+    }
+    #reader button:hover {
+      background-color: #1d4ed8 !important;
+    }
+    /* Style injected links (e.g. choose file links) */
+    #reader a {
+      color: #60a5fa !important;
+      text-decoration: underline !important;
+      font-weight: 600 !important;
+    }
   </style>
 </head>
 <body class="min-h-screen p-4 flex flex-col items-center justify-center">
@@ -74,11 +126,19 @@
       </div>
     </div>
 
-    <!-- Camera Scan Button -->
-    <button onclick="openScanner()" class="w-full py-3.5 bg-blue-900 hover:bg-blue-950 text-white font-bold rounded-2xl shadow-lg shadow-blue-900/20 flex items-center justify-center gap-2 active:scale-95 transition-all">
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path></svg>
-      Scan Booth QR Code
-    </button>
+    <!-- Scan / Upload Buttons -->
+    <div class="flex gap-2">
+      <button onclick="openScanner()" class="flex-1 py-3.5 bg-blue-900 hover:bg-blue-950 text-white font-bold rounded-2xl shadow-lg shadow-blue-900/20 flex items-center justify-center gap-2 active:scale-95 transition-all text-xs">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path></svg>
+        Scan Camera
+      </button>
+
+      <label for="main-file-input" class="flex-1 py-3.5 bg-blue-50 hover:bg-blue-100 text-blue-950 border border-blue-200 font-bold rounded-2xl shadow-sm flex items-center justify-center gap-2 cursor-pointer active:scale-95 transition-all text-xs">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+        Upload Image
+      </label>
+      <input type="file" id="main-file-input" accept="image/*" class="hidden" onchange="handleFileUpload(event)">
+    </div>
 
     <!-- Sticker Album Collection Grid -->
     <div>
@@ -119,45 +179,49 @@
         <h3 class="text-base font-bold text-blue-950">Scan Booth QR Code</h3>
         <button onclick="closeScanner()" class="text-gray-400 hover:text-gray-600 font-bold text-lg px-2">&times;</button>
       </div>
-      <div id="reader" class="w-full overflow-hidden rounded-2xl border-2 border-slate-100 bg-slate-900 min-h-[250px]"></div>
-      <button onclick="closeScanner()" class="w-full py-3 bg-slate-100 text-slate-700 font-bold rounded-xl hover:bg-slate-200 text-xs">
-        Cancel Scan
-      </button>
+      
+      <div id="reader" class="w-full overflow-hidden rounded-2xl bg-slate-900 min-h-[260px] flex flex-col items-center justify-center"></div>
+      
+      <div class="flex gap-2 w-full">
+        <label for="modal-file-input" class="flex-1 py-3 bg-blue-50 text-blue-900 border border-blue-200 font-bold rounded-xl hover:bg-blue-100 text-xs flex items-center justify-center gap-1.5 cursor-pointer">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+          Upload Photo
+        </label>
+        <input type="file" id="modal-file-input" accept="image/*" class="hidden" onchange="handleFileUpload(event)">
+        
+        <button onclick="closeScanner()" class="flex-1 py-3 bg-slate-100 text-slate-700 font-bold rounded-xl hover:bg-slate-200 text-xs">
+          Cancel
+        </button>
+      </div>
     </div>
   </div>
 
   <script>
     const TOTAL = 20;
-    let html5QrcodeScanner = null;
+    let html5QrCode = null;
     let stamps = [];
     let lastScannedBooth = null;
 
-    /**
-     * Exact matching for BCYF-2026 booth parameters.
-     * Iterates explicitly through B01..B20 to eliminate domain name collisions (like code-exp7 or 2026).
-     */
     function standardizeBoothId(input) {
       if (!input) return null;
       const raw = String(input).trim().toUpperCase();
 
       for (let i = 1; i <= TOTAL; i++) {
-        const paddedNum = String(i).padStart(2, '0'); // "01", "02", ..., "20"
+        const paddedNum = String(i).padStart(2, '0');
         
-        // Exact checks against known booth parameter patterns
         if (
-          raw.includes(`BOOTH=B${paddedNum}`) ||  // e.g. ?booth=B06
-          raw.includes(`BOOTH=${paddedNum}`)  ||  // e.g. ?booth=06
-          raw.includes(`BOOTH=${i}&`)         ||  // e.g. ?booth=6&...
-          raw.endsWith(`BOOTH=${i}`)          ||  // e.g. ?booth=6
-          raw === `B${paddedNum}`             ||  // e.g. raw text B06
-          raw === `BOOTH${paddedNum}`         ||  // e.g. raw text BOOTH06
-          raw === `${i}`                          // e.g. raw text 6
+          raw.includes(`BOOTH=B${paddedNum}`) ||
+          raw.includes(`BOOTH=${paddedNum}`)  ||
+          raw.includes(`BOOTH=${i}&`)         ||
+          raw.endsWith(`BOOTH=${i}`)          ||
+          raw === `B${paddedNum}`             ||
+          raw === `BOOTH${paddedNum}`         ||
+          raw === `${i}`
         ) {
           return `B${paddedNum}`;
         }
       }
 
-      // Return null if no valid booth key exists in input
       return null;
     }
 
@@ -232,11 +296,9 @@
       stamps = getSavedStamps();
       const count = stamps.length;
 
-      // Progress label
       const progressText = document.getElementById("progress-text");
       if (progressText) progressText.innerText = `${count} / ${TOTAL} Stamps`;
 
-      // Last scanned badge
       const lastBadge = document.getElementById("last-scanned-badge");
       if (lastBadge) {
         if (lastScannedBooth) {
@@ -247,7 +309,6 @@
         }
       }
 
-      // Lowest uncollected booth number for "NEXT" target indicator
       let nextTargetNum = TOTAL + 1;
       for (let i = 1; i <= TOTAL; i++) {
         const bId = `B${String(i).padStart(2, '0')}`;
@@ -343,7 +404,6 @@
         }
       }
 
-      // Auto-scroll Quest Path node container to focused booth
       const targetFocusId = highlightBoothId || `B${String(nextTargetNum <= TOTAL ? nextTargetNum : 1).padStart(2, '0')}`;
       setTimeout(() => {
         const targetNode = document.getElementById(`node-${targetFocusId}`);
@@ -369,13 +429,11 @@
         userDisplay.innerText = username ? `User: ${username}` : "User: Guest";
       }
 
-      // Check current page URL for direct QR code arrival
       const fullUrl = window.location.href;
       const urlBooth = standardizeBoothId(fullUrl);
 
       if (urlBooth) {
         addStamp(fullUrl, "url");
-        // Remove query parameters from address bar smoothly
         try {
           const cleanUrl = window.location.origin + window.location.pathname;
           window.history.replaceState({}, document.title, cleanUrl);
@@ -385,38 +443,87 @@
       }
     }
 
-    function openScanner() {
+    async function openScanner() {
       const modal = document.getElementById("scanner-modal");
       if (modal) {
         modal.classList.remove("hidden");
         modal.classList.add("flex");
       }
 
-      if (html5QrcodeScanner) {
-        html5QrcodeScanner.clear().catch(() => {});
+      if (html5QrCode) {
+        try {
+          await html5QrCode.stop();
+        } catch (e) {}
       }
+
+      html5QrCode = new Html5Qrcode("reader");
 
       const config = {
         fps: 15,
-        qrbox: (w, h) => {
-          const minEdge = Math.min(w, h);
-          return { width: Math.floor(minEdge * 0.75), height: Math.floor(minEdge * 0.75) };
-        },
-        aspectRatio: 1.0
+        qrbox: (viewfinderWidth, viewfinderHeight) => {
+          const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+          return {
+            width: Math.floor(minEdge * 0.75),
+            height: Math.floor(minEdge * 0.75)
+          };
+        }
       };
 
-      html5QrcodeScanner = new Html5QrcodeScanner("reader", config, false);
-      html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+      try {
+        await html5QrCode.start(
+          { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } },
+          config,
+          onScanSuccess,
+          onScanFailure
+        );
+      } catch (err) {
+        try {
+          await html5QrCode.start(
+            { facingMode: "user" },
+            config,
+            onScanSuccess,
+            onScanFailure
+          );
+        } catch (fallbackErr) {
+          showToast("Camera Error", "Unable to start camera. Try uploading an image file instead.", false);
+        }
+      }
     }
 
-    function closeScanner() {
-      if (html5QrcodeScanner) {
-        html5QrcodeScanner.clear().catch(() => {});
+    async function closeScanner() {
+      if (html5QrCode && html5QrCode.isScanning) {
+        try {
+          await html5QrCode.stop();
+        } catch (e) {}
       }
       const modal = document.getElementById("scanner-modal");
       if (modal) {
         modal.classList.add("hidden");
         modal.classList.remove("flex");
+      }
+    }
+
+    async function handleFileUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      await closeScanner();
+
+      if (!html5QrCode) {
+        html5QrCode = new Html5Qrcode("reader");
+      }
+
+      try {
+        const decodedText = await html5QrCode.scanFile(file, false);
+        addStamp(decodedText, "upload");
+      } catch (err) {
+        showToast(
+          "QR Code Not Found",
+          "Could not detect a clear QR code in this image. Please try a clearer photo or use live camera scan.",
+          false
+        );
+      } finally {
+        event.target.value = "";
       }
     }
 
@@ -426,7 +533,7 @@
     }
 
     function onScanFailure(error) {
-      // Searching...
+      // Ignored for live video feed to avoid spam
     }
 
     function resetPassport() {
